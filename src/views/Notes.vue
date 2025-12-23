@@ -1,6 +1,6 @@
 <!--
   Notes.vue - 笔记管理页面
-  支持笔记的增删改查、分类、搜索、颜色标记等功能
+  支持笔记的增删改查、分类、搜索、颜色标记、富文本编辑等功能
 -->
 
 <template>
@@ -15,23 +15,56 @@
     <!-- 顶部导航栏 -->
     <div class="navbar">
       <div class="navbar-content">
-        <div class="logo" @click="router.push('/home')" style="cursor: pointer">
-          <el-icon :size="24" color="#fff">
-            <Star />
-          </el-icon>
-          <span class="logo-text">My Notes</span>
+        <!-- 左侧品牌区域 -->
+        <div class="nav-left">
+          <div class="brand" @click="router.push('/home')">
+            <div class="brand-icon">
+              <el-icon :size="22">
+                <Notebook />
+              </el-icon>
+            </div>
+            <span class="brand-name">NoteSpace</span>
+          </div>
         </div>
-        <!-- 用户信息区域 -->
-        <div class="user-section">
+
+        <!-- 中间搜索区域 -->
+        <div class="nav-center">
+          <div class="global-search">
+            <el-icon class="search-icon"><Search /></el-icon>
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索笔记..."
+              class="search-input"
+              clearable
+            />
+          </div>
+        </div>
+
+        <!-- 右侧操作区域 -->
+        <div class="nav-right">
+          <!-- 快速操作按钮组 -->
+          <div class="quick-actions">
+            <el-tooltip content="快速新建" placement="bottom">
+              <el-button class="action-btn" @click="handleAddNote">
+                <el-icon :size="18"><Plus /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="通知" placement="bottom">
+              <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="badge-item">
+                <el-button class="action-btn">
+                  <el-icon :size="18"><Bell /></el-icon>
+                </el-button>
+              </el-badge>
+            </el-tooltip>
+          </div>
+
+          <!-- 用户下拉区域 -->
           <el-dropdown @command="handleCommand" trigger="click">
             <div class="user-dropdown">
-              <el-avatar :src="userInfo.avatar" :size="40" class="user-avatar">
+              <el-avatar :src="userInfo.avatar" :size="36" class="user-avatar">
                 <el-icon><User /></el-icon>
               </el-avatar>
-              <div class="user-text">
-                <div class="user-name">{{ userInfo.nickname }}</div>
-                <div class="user-role">笔记达人</div>
-              </div>
+              <span class="user-name">{{ userInfo.nickname }}</span>
               <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
@@ -43,6 +76,10 @@
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon>
                   <span>个人中心</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="settings">
+                  <el-icon><Setting /></el-icon>
+                  <span>设置</span>
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
@@ -214,105 +251,126 @@
       </div>
     </div>
 
-    <!-- 添加/编辑笔记对话框 -->
-    <el-dialog
+    <!-- 全屏编辑弹窗 -->
+    <el-drawer
       v-model="dialogVisible"
       :title="isEdit ? '编辑笔记' : '新建笔记'"
-      width="700px"
+      direction="btt"
+      :size="'95%'"
       :close-on-click-modal="false"
-      class="note-dialog"
+      :close-on-press-escape="false"
+      class="note-editor-drawer"
+      destroy-on-close
     >
-      <el-form :model="noteForm" label-width="80px">
-        <el-form-item label="标题">
+      <template #header>
+        <div class="drawer-header">
+          <div class="header-left">
+            <el-icon :size="20"><EditPen /></el-icon>
+            <span>{{ isEdit ? '编辑笔记' : '新建笔记' }}</span>
+          </div>
+          <div class="header-right">
+            <el-button @click="handleCancel" size="default">取消</el-button>
+            <el-button type="primary" @click="handleSubmit" size="default">
+              {{ isEdit ? '保存' : '创建' }}
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <div class="note-editor-container">
+        <div class="editor-header">
           <el-input
             v-model="noteForm.title"
             placeholder="给笔记起个标题..."
             size="large"
+            class="title-input"
+            :input-style="{ fontSize: '24px', fontWeight: 'bold', border: 'none', background: 'transparent' }"
           />
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="noteForm.category" placeholder="选择分类" size="large" style="width: 100%">
-            <el-option label="学习" value="学习">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon><Reading /></el-icon>
-                <span>学习</span>
+          <div class="editor-meta">
+            <el-select v-model="noteForm.category" placeholder="选择分类" size="large">
+              <el-option label="学习" value="学习">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <el-icon><Reading /></el-icon>
+                  <span>学习</span>
+                </div>
+              </el-option>
+              <el-option label="工作" value="工作">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <el-icon><Briefcase /></el-icon>
+                  <span>工作</span>
+                </div>
+              </el-option>
+              <el-option label="生活" value="生活">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <el-icon><Sunny /></el-icon>
+                  <span>生活</span>
+                </div>
+              </el-option>
+              <el-option label="想法" value="想法">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <el-icon><Sunny /></el-icon>
+                  <span>想法</span>
+                </div>
+              </el-option>
+              <el-option label="其他" value="其他">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <el-icon><More /></el-icon>
+                  <span>其他</span>
+                </div>
+              </el-option>
+            </el-select>
+            <div class="color-picker-inline">
+              <div
+                class="color-option-inline"
+                v-for="color in colors"
+                :key="color"
+                :style="{ background: color }"
+                :class="{ active: noteForm.color === color }"
+                @click="noteForm.color = color"
+                :title="color"
+              >
+                <el-icon v-if="noteForm.color === color"><Check /></el-icon>
               </div>
-            </el-option>
-            <el-option label="工作" value="工作">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon><Briefcase /></el-icon>
-                <span>工作</span>
-              </div>
-            </el-option>
-            <el-option label="生活" value="生活">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon><Sunny /></el-icon>
-                <span>生活</span>
-              </div>
-            </el-option>
-            <el-option label="想法" value="想法">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon><Sunny /></el-icon>
-                <span>想法</span>
-              </div>
-            </el-option>
-            <el-option label="其他" value="其他">
-              <div style="display: flex; align-items: center; gap: 8px">
-                <el-icon><More /></el-icon>
-                <span>其他</span>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="颜色">
-          <div class="color-picker">
-            <div
-              class="color-option"
-              v-for="color in colors"
-              :key="color"
-              :style="{ background: color }"
-              :class="{ active: noteForm.color === color }"
-              @click="noteForm.color = color"
-            >
-              <el-icon v-if="noteForm.color === color"><Check /></el-icon>
             </div>
+            <el-select
+              v-model="noteForm.tags"
+              multiple
+              placeholder="标签..."
+              size="large"
+              style="width: 200px"
+              allow-create
+              filterable
+              collapse-tags
+              collapse-tags-tooltip
+            >
+              <el-option label="重要" value="重要" />
+              <el-option label="紧急" value="紧急" />
+              <el-option label="待办" value="待办" />
+              <el-option label="已完成" value="已完成" />
+              <el-option label="参考" value="参考" />
+              <el-option label="灵感" value="灵感" />
+            </el-select>
           </div>
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-select
-            v-model="noteForm.tags"
-            multiple
-            placeholder="选择标签..."
-            size="large"
-            style="width: 100%"
-            allow-create
-            filterable
-          >
-            <el-option label="重要" value="重要" />
-            <el-option label="紧急" value="紧急" />
-            <el-option label="待办" value="待办" />
-            <el-option label="已完成" value="已完成" />
-            <el-option label="参考" value="参考" />
-            <el-option label="灵感" value="灵感" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="内容">
-          <el-input
-            v-model="noteForm.content"
-            type="textarea"
-            :rows="8"
-            placeholder="在这里写下你的想法..."
-            size="large"
+        </div>
+
+        <!-- 富文本编辑器 -->
+        <div class="rich-editor-wrapper">
+          <Toolbar
+            class="editor-toolbar"
+            :editor="editorRef"
+            :defaultConfig="toolbarConfig"
+            mode="default"
           />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">
-          {{ isEdit ? '保存' : '创建' }}
-        </el-button>
-      </template>
-    </el-dialog>
+          <Editor
+            class="editor-content"
+            v-model="noteForm.content"
+            :defaultConfig="editorConfig"
+            mode="default"
+            @onCreated="handleCreated"
+          />
+        </div>
+      </div>
+    </el-drawer>
 
     <!-- 查看笔记对话框 -->
     <el-dialog
@@ -348,15 +406,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, shallowRef, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, SwitchButton, HomeFilled, Notebook, Search,
   Plus, Edit, Delete, Calendar, Grid, Reading, Briefcase,
-  Sunny, More, Check
+  Sunny, More, Check, EditPen, Bell, Setting
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
+import '@wangeditor/editor/dist/css/style.css'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import { Boot } from '@wangeditor/editor'
+import markdownModule from '@wangeditor/plugin-md'
+
+// 注册 Markdown 插件（代码块是内置功能）
+Boot.registerModule(markdownModule)
 
 // ========== 路由实例 ==========
 const router = useRouter()
@@ -372,6 +437,9 @@ const userInfo = ref({
 
 // 搜索关键词
 const searchKeyword = ref('')
+
+// 通知数量
+const notificationCount = ref(0)
 
 // 分类筛选
 const filterCategory = ref('')
@@ -395,6 +463,84 @@ const noteForm = reactive({
   content: '',
   tags: []
 })
+
+// 富文本编辑器相关
+const editorRef = shallowRef()
+const editorHeight = ref('500px')
+
+// 工具栏配置
+const toolbarConfig = {
+  toolbarKeys: [
+    'headerSelect',
+    'bold',
+    'italic',
+    'underline',
+    'through',
+    '|',
+    'bulletedList',
+    'numberedList',
+    'todo',
+    '|',
+    'fontSize',
+    'fontFamily',
+    'lineHeight',
+    'color',
+    'bgColor',
+    '|',
+    'link',
+    'uploadImage',
+    'insertTable',
+    'codeBlock',
+    'divider',
+    '|',
+    'undo',
+    'redo',
+    'fullScreen'
+  ]
+}
+
+// 编辑器配置
+const editorConfig = {
+  placeholder: '开始写作...支持 Markdown 语法',
+  MENU_CONF: {
+    // 上传图片配置
+    uploadImage: {
+      customUpload: async (file, insertFn) => {
+        // 本地预览模式
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const url = e.target.result
+          insertFn(url, file.name, url)
+        }
+        reader.readAsDataURL(file)
+      }
+    },
+    // 代码块配置
+    codeSelect: {
+      codeLangs: [
+        { text: 'JavaScript', value: 'javascript' },
+        { text: 'TypeScript', value: 'typescript' },
+        { text: 'Vue', value: 'vue' },
+        { text: 'React', value: 'react' },
+        { text: 'HTML', value: 'html' },
+        { text: 'CSS', value: 'css' },
+        { text: 'Python', value: 'python' },
+        { text: 'Java', value: 'java' },
+        { text: 'C++', value: 'cpp' },
+        { text: 'C#', value: 'csharp' },
+        { text: 'Go', value: 'go' },
+        { text: 'Rust', value: 'rust' },
+        { text: 'PHP', value: 'php' },
+        { text: 'SQL', value: 'sql' },
+        { text: 'Bash', value: 'bash' },
+        { text: 'JSON', value: 'json' },
+        { text: 'Markdown', value: 'markdown' },
+        { text: 'YAML', value: 'yaml' },
+        { text: 'Text', value: 'text' }
+      ]
+    }
+  }
+}
 
 // 颜色选项
 const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#722ED1', '#13C2C2', '#F5222D']
@@ -478,6 +624,13 @@ onMounted(() => {
   }
 })
 
+onBeforeUnmount(() => {
+  // 销毁编辑器实例
+  if (editorRef.value) {
+    editorRef.value.destroy()
+  }
+})
+
 // ========== 方法 ==========
 
 // 获取分类数量
@@ -533,6 +686,13 @@ const handleEditNote = (note) => {
   noteForm.content = note.content
   noteForm.tags = [...(note.tags || [])]
   dialogVisible.value = true
+
+  // 等待 DOM 更新后设置编辑器内容
+  nextTick(() => {
+    if (editorRef.value) {
+      editorRef.value.setHtml(note.content || '')
+    }
+  })
 }
 
 // 查看笔记
@@ -541,10 +701,31 @@ const handleViewNote = (note) => {
   viewDialogVisible.value = true
 }
 
+// 编辑器创建完成
+const handleCreated = (editor) => {
+  editorRef.value = editor
+}
+
+// 取消编辑
+const handleCancel = () => {
+  if (editorRef.value) {
+    // 清空编辑器内容
+    editorRef.value.clear()
+  }
+  dialogVisible.value = false
+}
+
 // 提交笔记
 const handleSubmit = () => {
-  if (!noteForm.title || !noteForm.content) {
-    ElMessage.warning('请填写标题和内容')
+  if (!noteForm.title) {
+    ElMessage.warning('请填写标题')
+    return
+  }
+
+  // 获取编辑器的 HTML 内容
+  const content = editorRef.value?.getHtml() || ''
+  if (!content || content === '<p><br></p>') {
+    ElMessage.warning('请填写内容')
     return
   }
 
@@ -557,7 +738,7 @@ const handleSubmit = () => {
         title: noteForm.title,
         category: noteForm.category,
         color: noteForm.color,
-        content: noteForm.content,
+        content: content,
         tags: noteForm.tags,
         updatedAt: new Date().toISOString()
       }
@@ -570,7 +751,7 @@ const handleSubmit = () => {
       title: noteForm.title,
       category: noteForm.category,
       color: noteForm.color,
-      content: noteForm.content,
+      content: content,
       tags: noteForm.tags,
       createdAt: new Date().toISOString()
     }
@@ -604,6 +785,9 @@ const handleCommand = (command) => {
       break
     case 'profile':
       ElMessage.info('个人中心功能开发中...')
+      break
+    case 'settings':
+      ElMessage.info('设置功能开发中...')
       break
     case 'logout':
       handleLogout()
@@ -697,49 +881,171 @@ const handleLogout = async () => {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: rgba(15, 12, 41, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
 
 .navbar-content {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 30px;
-  height: 70px;
+  padding: 0 24px;
+  height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
 }
 
-.logo {
+/* 左侧品牌区域 */
+.nav-left {
+  flex-shrink: 0;
+}
+
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: transform 0.3s;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 6px 12px;
+  border-radius: 10px;
 }
 
-.logo:hover {
+.brand:hover {
+  background: rgba(255, 255, 255, 0.1);
   transform: scale(1.02);
 }
 
-.logo-text {
-  font-size: 22px;
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.brand-name {
+  font-size: 20px;
   font-weight: 700;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: 0.5px;
+}
+
+/* 中间搜索区域 */
+.nav-center {
+  flex: 1;
+  max-width: 500px;
+}
+
+.global-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+.global-search .search-input {
+  width: 100%;
+}
+
+.global-search :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding-left: 42px;
+  box-shadow: none;
+  transition: all 0.3s;
+}
+
+.global-search :deep(.el-input__wrapper:hover),
+.global-search :deep(.el-input__wrapper.is-focus) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.global-search :deep(.el-input__inner) {
+  color: #fff;
+  font-size: 14px;
+}
+
+.global-search :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.global-search :deep(.el-input__clear) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 右侧操作区域 */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+}
+
+.badge-item :deep(.el-badge__content) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(245, 87, 108, 0.4);
 }
 
 /* 用户下拉区域 */
 .user-dropdown {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: 50px;
-  background: rgba(255, 255, 255, 0.1);
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: all 0.3s;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -747,6 +1053,7 @@ const handleLogout = async () => {
 
 .user-dropdown:hover {
   background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -754,24 +1061,20 @@ const handleLogout = async () => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.user-text {
-  text-align: left;
-}
-
 .user-name {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-}
-
-.user-role {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dropdown-icon {
   color: rgba(255, 255, 255, 0.6);
   transition: transform 0.3s;
+  font-size: 14px;
 }
 
 .user-dropdown:hover .dropdown-icon {
@@ -1076,6 +1379,296 @@ const handleLogout = async () => {
 .color-option .el-icon {
   color: #fff;
   font-size: 20px;
+}
+
+/* ========== 笔记详情 ========== */
+.note-detail {
+  padding: 10px;
+}
+
+/* ========== 富文本编辑器样式 ========== */
+.note-editor-drawer :deep(.el-drawer__header) {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.note-editor-drawer :deep(.el-drawer__body) {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e4e7ed;
+  background: #fff;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+}
+
+.note-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f7fa;
+}
+
+.editor-header {
+  padding: 20px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.title-input {
+  margin-bottom: 16px;
+}
+
+.title-input :deep(.el-input__wrapper) {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.title-input :deep(.el-input__inner) {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.editor-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.color-picker-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-option-inline {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.color-option-inline:hover {
+  transform: scale(1.1);
+}
+
+.color-option-inline.active {
+  border-color: #409EFF;
+}
+
+.color-option-inline .el-icon {
+  color: #fff;
+  font-size: 18px;
+}
+
+.rich-editor-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  margin: 16px 24px 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.editor-toolbar {
+  border-bottom: 1px solid #e4e7ed;
+  background: #fafafa;
+}
+
+.editor-toolbar :deep(.w-e-toolbar) {
+  border: none;
+  background: transparent;
+  padding: 10px 20px;
+  flex-wrap: wrap;
+}
+
+.editor-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.editor-content :deep(.w-e-text-container) {
+  background: #fff;
+}
+
+.editor-content :deep(.w-e-text-placeholder) {
+  color: #999;
+  font-style: normal;
+}
+
+/* 代码块高亮样式 */
+.editor-content :deep(pre) {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.editor-content :deep(code) {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Markdown 内容预览样式 */
+.detail-content {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #333;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.detail-content :deep(h1) {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 20px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #eee;
+}
+
+.detail-content :deep(h2) {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 18px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-content :deep(h3) {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+
+.detail-content :deep(p) {
+  margin: 12px 0;
+}
+
+.detail-content :deep(code) {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  color: #e83e8c;
+}
+
+.detail-content :deep(pre) {
+  background: #282c34;
+  color: #abb2bf;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.detail-content :deep(pre code) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.detail-content :deep(ul),
+.detail-content :deep(ol) {
+  padding-left: 24px;
+  margin: 12px 0;
+}
+
+.detail-content :deep(li) {
+  margin: 6px 0;
+}
+
+.detail-content :deep(blockquote) {
+  border-left: 4px solid #409EFF;
+  padding-left: 16px;
+  margin: 12px 0;
+  color: #666;
+  background: #f9f9f9;
+  padding: 12px 16px;
+  border-radius: 4px;
+}
+
+.detail-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.detail-content :deep(th),
+.detail-content :deep(td) {
+  border: 1px solid #ddd;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.detail-content :deep(th) {
+  background: #f5f7fa;
+  font-weight: 600;
+}
+
+.detail-content :deep(img) {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.detail-content :deep(hr) {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 20px 0;
+}
+
+/* 笔记卡片内容预览样式优化 */
+.note-content {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 88px;
+}
+
+.note-content :deep(p) {
+  margin: 4px 0;
 }
 
 /* ========== 笔记详情 ========== */

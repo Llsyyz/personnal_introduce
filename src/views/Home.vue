@@ -12,26 +12,57 @@
       <div class="bg-shape shape-3"></div>
     </div>
 
-    <!-- 顶部导航栏 - 玻璃态设计 -->
+    <!-- 顶部导航栏 - Notion 风格 -->
     <div class="navbar">
       <div class="navbar-content">
-        <div class="logo">
-          <el-icon :size="24" color="#fff">
-            <Star />
-          </el-icon>
-          <span class="logo-text">My Journey</span>
+        <!-- 左侧品牌区域 -->
+        <div class="nav-left">
+          <div class="brand">
+            <div class="brand-icon">
+              <el-icon :size="22">
+                <Star />
+              </el-icon>
+            </div>
+            <span class="brand-name">NoteSpace</span>
+          </div>
         </div>
-        <!-- 用户信息区域 -->
-        <div class="user-section">
+
+        <!-- 中间搜索区域 -->
+        <div class="nav-center">
+          <div class="global-search">
+            <el-icon class="search-icon"><Search /></el-icon>
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索历程..."
+              class="search-input"
+              clearable
+            />
+          </div>
+        </div>
+
+        <!-- 右侧操作区域 -->
+        <div class="nav-right">
+          <!-- 快速操作按钮组 -->
+          <div class="quick-actions">
+            <el-tooltip content="快速添加" placement="bottom">
+              <el-button class="action-btn" @click="handleAddExperience">
+                <el-icon :size="18"><Plus /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="查看笔记" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/notes')">
+                <el-icon :size="18"><Notebook /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+
+          <!-- 用户下拉区域 -->
           <el-dropdown @command="handleCommand" trigger="click">
             <div class="user-dropdown">
-              <el-avatar :src="userInfo.avatar" :size="40" class="user-avatar">
+              <el-avatar :src="userInfo.avatar" :size="36" class="user-avatar">
                 <el-icon><User /></el-icon>
               </el-avatar>
-              <div class="user-text">
-                <div class="user-name">{{ userInfo.nickname }}</div>
-                <div class="user-role">探索者</div>
-              </div>
+              <span class="user-name">{{ userInfo.nickname }}</span>
               <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
@@ -237,7 +268,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, Setting, SwitchButton, Trophy,
   Compass, Plus, SuccessFilled, Clock, Collection,
-  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook
+  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 
@@ -255,6 +286,9 @@ const userInfo = ref({
 
 // 当前时间
 const currentTime = ref('')
+
+// 搜索关键词
+const searchKeyword = ref('')
 
 // 时间轴引用
 const timelineRef = ref(null)
@@ -530,44 +564,160 @@ const handleLogout = async () => {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
+  background: rgba(15, 12, 41, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
 }
 
 .navbar-content {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 0 30px;
-  height: 70px;
+  padding: 0 24px;
+  height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
 }
 
-.logo {
+/* 左侧品牌区域 */
+.nav-left {
+  flex-shrink: 0;
+}
+
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 6px 12px;
+  border-radius: 10px;
 }
 
-.logo-text {
-  font-size: 22px;
+.brand:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.brand-name {
+  font-size: 20px;
   font-weight: 700;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: 0.5px;
+}
+
+/* 中间搜索区域 */
+.nav-center {
+  flex: 1;
+  max-width: 500px;
+}
+
+.global-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+.global-search .search-input {
+  width: 100%;
+}
+
+.global-search :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding-left: 42px;
+  box-shadow: none;
+  transition: all 0.3s;
+}
+
+.global-search :deep(.el-input__wrapper:hover),
+.global-search :deep(.el-input__wrapper.is-focus) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.global-search :deep(.el-input__inner) {
+  color: #fff;
+  font-size: 14px;
+}
+
+.global-search :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.global-search :deep(.el-input__clear) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 右侧操作区域 */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* 用户下拉区域 */
 .user-dropdown {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: 50px;
-  background: rgba(255, 255, 255, 0.1);
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: all 0.3s;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -575,6 +725,7 @@ const handleLogout = async () => {
 
 .user-dropdown:hover {
   background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -582,24 +733,20 @@ const handleLogout = async () => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.user-text {
-  text-align: left;
-}
-
 .user-name {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-}
-
-.user-role {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dropdown-icon {
   color: rgba(255, 255, 255, 0.6);
   transition: transform 0.3s;
+  font-size: 14px;
 }
 
 .user-dropdown:hover .dropdown-icon {
