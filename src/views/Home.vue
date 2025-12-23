@@ -36,6 +36,10 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="notes">
+                  <el-icon><Notebook /></el-icon>
+                  <span>我的笔记</span>
+                </el-dropdown-item>
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon>
                   <span>个人中心</span>
@@ -233,7 +237,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, Setting, SwitchButton, Trophy,
   Compass, Plus, SuccessFilled, Clock, Collection,
-  Calendar, View, Delete, TrendCharts, Medal, Document
+  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 
@@ -376,6 +380,9 @@ const scrollToTimeline = () => {
 // 处理下拉菜单命令
 const handleCommand = (command) => {
   switch (command) {
+    case 'notes':
+      router.push('/notes')
+      break
     case 'profile':
       ElMessage.info('个人中心功能开发中...')
       break

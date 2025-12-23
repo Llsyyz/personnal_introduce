@@ -71,7 +71,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { loginApi } from '@/api/login'
@@ -79,6 +79,8 @@ import { loginApi } from '@/api/login'
 // ========== 路由实例 ==========
 // useRouter 用于获取路由实例，进行页面跳转
 const router = useRouter()
+// useRoute 用于获取当前路由信息，获取查询参数
+const route = useRoute()
 
 // ========== 响应式数据 ==========
 
@@ -133,6 +135,9 @@ const handleLogin = async () => {
     // 存储 token 到 localStorage
     localStorage.setItem('token', response.data.token)
 
+    // 存储登录时间（用于过期检查）
+    localStorage.setItem('loginTime', Date.now().toString())
+
     // 存储用户信息
     localStorage.setItem('userInfo', JSON.stringify(response.data.userInfo))
 
@@ -143,9 +148,11 @@ const handleLogin = async () => {
       localStorage.removeItem('rememberUsername')
     }
 
-    // 5. 跳转到首页
+    // 5. 跳转到首页或重定向页面
     setTimeout(() => {
-      router.push('/home')
+      // 检查是否有重定向目标
+      const redirect = route.query.redirect || '/home'
+      router.push(redirect)
     }, 500)
 
   } catch (error) {
