@@ -101,32 +101,8 @@
             <el-icon><Notebook /></el-icon>
             我的笔记
           </h1>
-          <div class="search-box">
-            <el-input
-              v-model="searchKeyword"
-              placeholder="搜索笔记..."
-              :prefix-icon="Search"
-              size="large"
-              clearable
-              class="search-input"
-            />
-          </div>
         </div>
         <div class="toolbar-right">
-          <el-select
-            v-model="filterCategory"
-            placeholder="全部分类"
-            size="large"
-            clearable
-            class="category-filter"
-          >
-            <el-option label="全部分类" value="" />
-            <el-option label="学习" value="学习" />
-            <el-option label="工作" value="工作" />
-            <el-option label="生活" value="生活" />
-            <el-option label="想法" value="想法" />
-            <el-option label="其他" value="其他" />
-          </el-select>
           <el-button type="primary" size="large" @click="handleAddNote" class="add-btn">
             <el-icon><Plus /></el-icon>
             新建笔记
@@ -216,7 +192,7 @@
             </div>
           </div>
           <h3 class="note-title">{{ note.title }}</h3>
-          <p class="note-content">{{ note.content }}</p>
+          <p class="note-content">{{ getPlainText(note.content) }}</p>
           <div class="note-footer">
             <div class="note-date">
               <el-icon><Calendar /></el-icon>
@@ -372,36 +348,51 @@
       </div>
     </el-drawer>
 
-    <!-- 查看笔记对话框 -->
-    <el-dialog
-      v-model="viewDialogVisible"
-      :title="currentNote?.title"
-      width="700px"
-      class="view-dialog"
-    >
-      <div class="note-detail" v-if="currentNote">
-        <div class="detail-meta">
-          <div class="detail-category" :style="{ background: currentNote.color + '20', color: currentNote.color }">
-            <el-icon><component :is="getCategoryIcon(currentNote.category)" /></el-icon>
-            <span>{{ currentNote.category }}</span>
-          </div>
-          <div class="detail-date">
-            <el-icon><Calendar /></el-icon>
-            {{ formatDate(currentNote.createdAt) }}
+    <!-- 查看笔记全屏层 -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="viewDialogVisible" class="note-fullscreen" :style="{ '--note-color': currentNote?.color || '#409EFF' }" @click.self="viewDialogVisible = false">
+          <div class="note-fullscreen-content" v-if="currentNote">
+            <!-- 装饰背景 -->
+            <div class="detail-bg-decoration"></div>
+
+            <!-- 顶部导航 -->
+            <div class="detail-navbar">
+              <div class="navbar-left">
+                <div class="detail-category">
+                  <el-icon><component :is="getCategoryIcon(currentNote.category)" /></el-icon>
+                  <span>{{ currentNote.category }}</span>
+                </div>
+                <span class="detail-date">{{ formatDate(currentNote.createdAt) }}</span>
+              </div>
+              <div class="navbar-right">
+                <el-icon class="close-icon" @click="viewDialogVisible = false">
+                  <Close />
+                </el-icon>
+              </div>
+            </div>
+
+            <!-- 内容滚动区域 -->
+            <div class="detail-scroll-area">
+              <!-- 标题 -->
+              <h1 class="note-title-view">{{ currentNote.title }}</h1>
+
+              <!-- 正文内容 -->
+              <div class="detail-content" v-html="currentNote.content"></div>
+
+              <!-- 标签 -->
+              <div class="detail-tags-wrapper" v-if="currentNote.tags && currentNote.tags.length">
+                <div class="detail-tags">
+                  <span v-for="tag in currentNote.tags" :key="tag" class="tag-item">
+                    {{ tag }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="detail-content">{{ currentNote.content }}</div>
-        <div class="detail-tags" v-if="currentNote.tags && currentNote.tags.length">
-          <el-tag
-            v-for="tag in currentNote.tags"
-            :key="tag"
-            :style="{ background: currentNote.color + '20', color: currentNote.color, border: 'none' }"
-          >
-            {{ tag }}
-          </el-tag>
-        </div>
-      </div>
-    </el-dialog>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -412,7 +403,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, SwitchButton, HomeFilled, Notebook, Search,
   Plus, Edit, Delete, Calendar, Grid, Reading, Briefcase,
-  Sunny, More, Check, EditPen, Bell, Setting
+  Sunny, More, Check, EditPen, Bell, Setting, Close
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 import '@wangeditor/editor/dist/css/style.css'
@@ -600,9 +591,10 @@ const notes = ref([
 const filteredNotes = computed(() => {
   return notes.value.filter(note => {
     const matchCategory = !filterCategory.value || note.category === filterCategory.value
+    const plainContent = getPlainText(note.content)
     const matchSearch = !searchKeyword.value ||
       note.title.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+      plainContent.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
       note.tags?.some(tag => tag.toLowerCase().includes(searchKeyword.value.toLowerCase()))
     return matchCategory && matchSearch
   })
@@ -662,6 +654,27 @@ const formatDate = (dateStr) => {
   if (days === 1) return '昨天'
   if (days < 7) return `${days}天前`
   return date.toLocaleDateString('zh-CN')
+}
+
+// 提取纯文本（用于卡片预览）
+const getPlainText = (html) => {
+  if (!html) return ''
+  // 创建临时 DOM 元素提取纯文本
+  const temp = document.createElement('div')
+  temp.innerHTML = html
+
+  // 处理块级元素，在它们后面添加换行
+  const blockElements = temp.querySelectorAll('p, div, li, h1, h2, h3, h4, h5, h6, br')
+  blockElements.forEach(el => {
+    if (el.tagName !== 'BR') {
+      el.after('\n')
+    }
+  })
+
+  let text = temp.textContent || temp.innerText || ''
+  // 保留换行，只清理多余的连续空格
+  text = text.replace(/[ \t]+/g, ' ').replace(/[ \t]*\n[ \t]*/g, '\n').trim()
+  return text
 }
 
 // 添加笔记
@@ -1101,8 +1114,6 @@ const handleLogout = async () => {
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 20px;
-  flex: 1;
 }
 
 .page-title {
@@ -1113,41 +1124,11 @@ const handleLogout = async () => {
   font-weight: 700;
   color: #fff;
   margin: 0;
-  white-space: nowrap;
-}
-
-.search-box {
-  flex: 1;
-  max-width: 400px;
-}
-
-.search-input {
-  --el-input-bg-color: rgba(255, 255, 255, 0.1);
-  --el-input-border-color: rgba(255, 255, 255, 0.2);
-  --el-input-text-color: #fff;
-  --el-input-placeholder-color: rgba(255, 255, 255, 0.5);
-}
-
-.search-input :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50px;
-}
-
-.search-input :deep(.el-input__wrapper:hover),
-.search-input :deep(.el-input__wrapper.is-focus) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.category-filter {
-  width: 140px;
 }
 
 .add-btn {
@@ -1292,11 +1273,11 @@ const handleLogout = async () => {
   color: rgba(255, 255, 255, 0.7);
   line-height: 1.6;
   margin-bottom: 16px;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
+  max-height: 88px;
   overflow: hidden;
-  min-height: 88px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  position: relative;
 }
 
 .note-footer {
@@ -1654,68 +1635,390 @@ const handleLogout = async () => {
   margin: 20px 0;
 }
 
-/* 笔记卡片内容预览样式优化 */
-.note-content {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.6;
-  margin-bottom: 16px;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
+/* ========== 笔记详情 - 全屏浅色风格 ========== */
+/* 全屏容器 */
+.note-fullscreen {
+  --note-color: #409EFF;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: #f0f0f5;
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 淡入淡出动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.note-fullscreen-content {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  min-height: 88px;
 }
 
-.note-content :deep(p) {
-  margin: 4px 0;
+/* 装饰背景 */
+.detail-bg-decoration {
+  position: absolute;
+  top: -150px;
+  right: -150px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--note-color) 0%, transparent 70%);
+  opacity: 0.06;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(100px);
 }
 
-/* ========== 笔记详情 ========== */
-.note-detail {
-  padding: 10px;
+.detail-bg-decoration::before {
+  content: '';
+  position: absolute;
+  bottom: -100px;
+  left: -100px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--note-color) 0%, transparent 70%);
+  opacity: 0.04;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
 }
 
-.detail-meta {
+/* 顶部导航栏 */
+.detail-navbar {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  padding: 16px 40px;
+  background: #fff;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .detail-category {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  background: var(--note-color);
+  color: #fff;
+  box-shadow: 0 2px 12px var(--note-color);
+}
+
+.detail-category .el-icon {
+  font-size: 16px;
 }
 
 .detail-date {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(0, 0, 0, 0.5);
+  color: #86868b;
   font-size: 14px;
 }
 
-.detail-content {
-  font-size: 16px;
-  line-height: 1.8;
-  color: #333;
-  white-space: pre-wrap;
-  margin-bottom: 20px;
-  padding: 20px;
-  background: #f5f7fa;
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+
+.close-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #86868b;
+  font-size: 22px;
+  transition: all 0.3s ease;
+  background: #f5f5f7;
+  border: 2px solid #e5e5ea;
+}
+
+.close-icon:hover {
+  background: #e5e5ea;
+  border-color: #d1d1d6;
+  color: #1d1d1f;
+  transform: rotate(90deg) scale(1.05);
+}
+
+/* 内容滚动区域 */
+.detail-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 50px 100px 80px;
+  position: relative;
+  background: #fff;
+  margin: 20px;
   border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 左侧装饰线 */
+.detail-scroll-area::before {
+  content: '';
+  position: absolute;
+  left: 30px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--note-color) 0%, transparent 100%);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+/* 滚动条样式 */
+.detail-scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.detail-scroll-area::-webkit-scrollbar-track {
+  background: #f5f5f7;
+  border-radius: 4px;
+}
+
+.detail-scroll-area::-webkit-scrollbar-thumb {
+  background: #c7c7cc;
+  border-radius: 4px;
+}
+
+.detail-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a6;
+}
+
+/* 标题 */
+.note-title-view {
+  font-size: 46px;
+  font-weight: 700;
+  color: #1d1d1f;
+  text-align: left;
+  margin: 0 0 40px;
+  padding-left: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  border-left: 4px solid var(--note-color);
+}
+
+/* 内容区域 */
+.detail-content {
+  font-size: 17px;
+  line-height: 1.85;
+  color: #1d1d1f;
+  margin-bottom: 50px;
+  padding-left: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  letter-spacing: -0.005em;
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* 内容样式 */
+.detail-content :deep(h1) {
+  font-size: 36px;
+  font-weight: 700;
+  margin: 44px 0 22px;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.detail-content :deep(h2) {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 36px 0 18px;
+  color: #1d1d1f;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.detail-content :deep(h3) {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 28px 0 14px;
+  color: #1d1d1f;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.detail-content :deep(p) {
+  margin: 16px 0;
+  line-height: 1.85;
+  color: #1d1d1f;
+}
+
+.detail-content :deep(code) {
+  background: #f0f0f5;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', monospace;
+  font-size: 14px;
+  color: #d73a49;
+  border: 1px solid #e5e5ea;
+}
+
+.detail-content :deep(pre) {
+  background: #1d1d1f;
+  color: #f5f5f7;
+  padding: 20px 24px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 24px 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.detail-content :deep(pre code) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 14px;
+  border: none;
+}
+
+.detail-content :deep(ul),
+.detail-content :deep(ol) {
+  padding-left: 24px;
+  margin: 16px 0;
+}
+
+.detail-content :deep(li) {
+  margin: 10px 0;
+  line-height: 1.85;
+  color: #1d1d1f;
+}
+
+.detail-content :deep(blockquote) {
+  border-left: 4px solid var(--note-color);
+  padding: 16px 20px;
+  margin: 24px 0;
+  color: #6e6e73;
+  background: #f5f5f7;
+  border-radius: 0 8px 8px 0;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.detail-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.detail-content :deep(th),
+.detail-content :deep(td) {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.detail-content :deep(th) {
+  background: #f5f5f7;
+  font-weight: 600;
+  color: #1d1d1f;
+  font-size: 14px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.detail-content :deep(td) {
+  background: #fff;
+  color: #1d1d1f;
+}
+
+.detail-content :deep(img) {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 24px 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.detail-content :deep(hr) {
+  border: none;
+  border-top: 2px solid rgba(0, 0, 0, 0.08);
+  margin: 36px 0;
+}
+
+.detail-content :deep(a) {
+  color: var(--note-color);
+  text-decoration: none;
+  transition: all 0.2s;
+  border-bottom: 1px solid transparent;
+}
+
+.detail-content :deep(a:hover) {
+  color: #0077ed;
+  border-bottom-color: var(--note-color);
+}
+
+/* 标签区域 */
+.detail-tags-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  padding: 28px 20px 0;
+  margin-left: 20px;
+  border-top: 2px solid rgba(0, 0, 0, 0.08);
 }
 
 .detail-tags {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+.tag-item {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: all 0.3s;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  border: 1px solid #e5e5ea;
+}
+
+.tag-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #e5e5ea;
+  border-color: #d1d1d6;
 }
 
 /* ========== 响应式设计 ========== */
@@ -1725,20 +2028,8 @@ const handleLogout = async () => {
     align-items: stretch;
   }
 
-  .toolbar-left {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-box {
-    max-width: none;
-  }
-
+  .toolbar-left,
   .toolbar-right {
-    flex-direction: column;
-  }
-
-  .category-filter {
     width: 100%;
   }
 
@@ -1749,6 +2040,43 @@ const handleLogout = async () => {
   .category-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* 笔记详情全屏响应式 */
+  .detail-navbar {
+    padding: 16px 20px;
+  }
+
+  .detail-scroll-area {
+    padding: 40px 24px 60px;
+  }
+
+  .note-title-view {
+    font-size: 32px;
+    margin-bottom: 24px;
+  }
+
+  .detail-content {
+    font-size: 16px;
+  }
+
+  .detail-content :deep(h1) {
+    font-size: 28px;
+  }
+
+  .detail-content :deep(h2) {
+    font-size: 24px;
+  }
+
+  .detail-content :deep(h3) {
+    font-size: 20px;
+  }
+
+  .detail-bg-decoration {
+    top: -80px;
+    right: -80px;
+    width: 250px;
+    height: 250px;
   }
 }
 
