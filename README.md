@@ -1,6 +1,11 @@
-# Vue 3 + Element Plus 登录功能示例
+# Vue 3 + Element Plus 个人历程记录系统
 
-一个标准的 Vue 3 项目，包含完整的登录功能和 Apple 风格设计，适合初学者学习。
+一个大胆创新的 Vue 3 项目，包含完整的登录功能和个人历史经历时间轴展示。
+
+## 项目预览
+
+- **登录页**：Apple 风格的渐变背景 + 毛玻璃效果
+- **首页**：深色主题 + 动态背景 + 浮动卡片 + 时间轴展示
 
 ## 项目结构
 
@@ -9,15 +14,14 @@ vue-login-demo/
 ├── public/                 # 静态资源目录
 ├── src/
 │   ├── api/               # API 接口目录
-│   │   └── login.js       # 登录相关接口
+│   │   └── login.js       # 登录相关接口（模拟）
 │   ├── assets/            # 资源文件目录
-│   │   └── css/           # 样式文件
 │   ├── components/        # 公共组件目录
 │   ├── router/            # 路由配置目录
-│   │   └── index.js       # 路由配置文件
+│   │   └── index.js       # 路由配置 + 路由守卫
 │   ├── views/             # 页面组件目录
 │   │   ├── Login.vue      # 登录页面
-│   │   └── Home.vue       # 首页
+│   │   └── Home.vue       # 首页（时间轴）
 │   ├── App.vue            # 根组件
 │   └── main.js            # 应用入口
 ├── index.html             # HTML 入口文件
@@ -55,140 +59,155 @@ npm run build
 
 ## 核心功能
 
-### 1. 登录功能
+### 登录功能
 - 表单验证（用户名、密码格式验证）
 - 记住我功能
 - 登录状态加载动画
 - 错误提示
 
-### 2. 路由功能
+### 路由功能
 - 登录页 `/login`
 - 首页 `/home`
 - 路由守卫（未登录自动跳转到登录页）
 
-### 3. 用户信息
-- 登录成功后保存 token 和用户信息
-- 首页展示用户信息
-- 退出登录功能
+### 首页功能
+- 动态渐变背景 + 浮动动画
+- 英雄区域（欢迎信息）
+- 统计卡片（总历程、成就达成、本月记录）
+- **个人历程时间轴**
+  - 左右交替布局
+  - 添加新经历
+  - 删除经历
+  - 标签分类（学习、工作、旅行、成就等）
+  - 数据持久化（localStorage）
+
+## 首页设计亮点
+
+### 1. 动态背景
+- 深色渐变背景 `#1a1a2e → #16213e → #0f3460`
+- 三个浮动的模糊圆形，持续动画
+- 创造深度感和活力
+
+### 2. 玻璃态设计
+```css
+background: rgba(255, 255, 255, 0.1);
+backdrop-filter: blur(20px);
+border: 1px solid rgba(255, 255, 255, 0.1);
+```
+
+### 3. 时间轴效果
+- 中心线渐变
+- 左右交替布局
+- 悬停缩放效果
+- 彩色节点 + 标签
+
+### 4. 统计卡片
+- 渐变图标背景
+- 数字动态显示
+- 悬停上浮效果
 
 ## 代码详解
 
-### 一、入口文件 index.html
-
-这是应用的 HTML 入口，只包含一个挂载点：
-
-```html
-<div id="app"></div>
-<script type="module" src="/src/main.js"></script>
-```
-
-### 二、应用入口 main.js
+### 一、响应式数据管理
 
 ```javascript
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
-import ElementPlus from 'element-plus'
+// 经历数据列表
+const experiences = ref([
+  {
+    id: 1,
+    title: '开始学习 Vue 3',
+    date: '2024-01-15',
+    description: '今天开始系统学习 Vue 3 框架...',
+    tags: ['学习'],
+    color: '#409EFF'
+  }
+])
 
-const app = createApp(App)
-app.use(router)
-app.use(ElementPlus)
-app.mount('#app')
+// 统计数据（计算属性）
+const stats = computed(() => [
+  {
+    icon: 'TrendCharts',
+    label: '总历程',
+    value: experiences.value.length,
+    color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  }
+])
 ```
 
-**解释**：
-- `createApp(App)`：创建 Vue 应用实例
-- `app.use(router)`：注册路由插件
-- `app.use(ElementPlus)`：注册 Element Plus 组件库
-- `app.mount('#app')`：挂载到 DOM
+### 二、添加经历功能
 
-### 三、根组件 App.vue
+```javascript
+const handleSubmit = () => {
+  // 验证表单
+  if (!experienceForm.title || !experienceForm.date) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
+
+  // 创建新经历
+  const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C']
+  const newExp = {
+    id: Date.now(),
+    ...experienceForm,
+    color: colors[Math.floor(Math.random() * colors.length)]
+  }
+
+  // 添加到列表开头
+  experiences.value.unshift(newExp)
+
+  // 持久化存储
+  localStorage.setItem('experiences', JSON.stringify(experiences.value))
+
+  ElMessage.success('添加成功')
+  dialogVisible.value = false
+}
+```
+
+### 三、时间轴布局
 
 ```vue
 <template>
-  <router-view />
+  <div class="timeline-item" :class="{ 'left': index % 2 === 0, 'right': index % 2 === 1 }">
+    <div class="timeline-dot" :style="{ background: exp.color }"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">{{ exp.date }}</div>
+      <h3 class="timeline-title">{{ exp.title }}</h3>
+      <p class="timeline-desc">{{ exp.description }}</p>
+    </div>
+  </div>
 </template>
 ```
 
-**解释**：`<router-view />` 是路由出口，根据 URL 显示对应页面
+```css
+/* 中心线 */
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, rgba(102, 126, 234, 0.5), transparent);
+}
 
-### 四、路由配置 router/index.js
+/* 左右布局 */
+.timeline-item.left .timeline-content {
+  margin-right: calc(50% + 40px);
+  text-align: right;
+}
 
-```javascript
-const routes = [
-  { path: '/', redirect: '/login' },
-  { path: '/login', component: Login },
-  { path: '/home', component: Home, meta: { requiresAuth: true } }
-]
-```
-
-**解释**：
-- `/` 重定向到 `/login`
-- `/home` 设置了 `requiresAuth: true`，需要登录才能访问
-
-### 五、登录页面 Login.vue
-
-#### 1. 响应式数据
-
-```javascript
-const loginForm = reactive({
-  username: '',
-  password: '',
-  remember: false
-})
-```
-
-#### 2. 表单验证规则
-
-```javascript
-const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
-  ]
+.timeline-item.right .timeline-content {
+  margin-left: calc(50% + 40px);
+  text-align: left;
 }
 ```
 
-#### 3. 登录处理
+## 技术栈
 
-```javascript
-const handleLogin = async () => {
-  // 1. 验证表单
-  const valid = await loginFormRef.value.validate().catch(() => false)
-  if (!valid) return
-
-  // 2. 调用接口
-  const response = await loginApi(loginForm.username, loginForm.password)
-
-  // 3. 保存 token
-  localStorage.setItem('token', response.data.token)
-
-  // 4. 跳转首页
-  router.push('/home')
-}
-```
-
-### 六、API 接口 api/login.js
-
-```javascript
-export const loginApi = (username, password) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (username === 'admin' && password === '123456') {
-        resolve({ code: 200, message: '登录成功', data: {...} })
-      } else {
-        reject({ message: '用户名或密码错误' })
-      }
-    }, 1000)
-  })
-}
-```
-
-**解释**：这是模拟的异步接口，实际项目中会替换成真实的 API 请求
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Vue | 3.4+ | 渐进式 JavaScript 框架 |
+| Vue Router | 4.2+ | Vue 官方路由管理器 |
+| Element Plus | 2.5+ | Vue 3 组件库 |
+| Vite | 5.0+ | 下一代前端构建工具 |
 
 ## Vue 3 核心概念
 
@@ -196,10 +215,12 @@ export const loginApi = (username, password) => {
 
 ```vue
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 
 const count = ref(0)
 const user = reactive({ name: 'admin' })
+
+const doubleCount = computed(() => count.value * 2)
 
 onMounted(() => {
   console.log('组件已挂载')
@@ -219,55 +240,46 @@ const user = reactive({ name: 'admin' })
 console.log(user.name)    // 直接访问属性
 ```
 
-### 3. 路由使用
+### 3. 计算属性
 
 ```javascript
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-
-// 跳转页面
-router.push('/home')
-
-// 带参数跳转
-router.push({ path: '/user', query: { id: 1 } })
-```
-
-### 4. 组件通信
-
-```vue
-<!-- 父组件传递数据 -->
-<Child :message="parentMsg" />
-
-<!-- 子组件接收 -->
-<script setup>
-const props = defineProps({
-  message: String
+const stats = computed(() => {
+  return {
+    total: experiences.value.length,
+    achievements: experiences.value.filter(e => e.tags?.includes('成就')).length
+  }
 })
-</script>
 ```
 
-## 技术栈
+### 4. 生命周期
 
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Vue | 3.4+ | 渐进式 JavaScript 框架 |
-| Vue Router | 4.2+ | Vue 官方路由管理器 |
-| Element Plus | 2.5+ | Vue 3 组件库 |
-| Vite | 5.0+ | 下一代前端构建工具 |
+```javascript
+onMounted(() => {
+  // 组件挂载后执行
+  const data = localStorage.getItem('experiences')
+  if (data) experiences.value = JSON.parse(data)
+})
+
+onUnmounted(() => {
+  // 组件卸载前执行
+  clearInterval(timer)
+})
+```
 
 ## 学习建议
 
 1. **理解项目结构**：先熟悉各个文件的作用
 2. **运行项目**：实际操作，观察页面效果
-3. **修改样式**：尝试修改 CSS，理解样式作用
-4. **添加功能**：尝试添加注册页面、修改密码等功能
-5. **接入真实接口**：将模拟接口替换成真实的后端 API
+3. **添加新功能**：
+   - 添加经历编辑功能
+   - 添加经历搜索/筛选功能
+   - 添加图片上传功能
+   - 添加经历导出功能
+4. **接入真实接口**：将模拟接口替换成真实的后端 API
 
 ## 常见问题
 
 ### 1. npm install 很慢？
-可以使用国内镜像：
 ```bash
 npm config set registry https://registry.npmmirror.com
 ```
@@ -277,3 +289,16 @@ npm config set registry https://registry.npmmirror.com
 
 ### 3. 如何部署？
 运行 `npm run build` 后，将 `dist` 目录部署到服务器
+
+### 4. 数据存在哪里？
+目前使用 `localStorage` 存储在浏览器本地，刷新页面数据不会丢失
+
+## 未来扩展
+
+- [ ] 经历编辑功能
+- [ ] 图片上传支持
+- [ ] 数据导出（PDF/Excel）
+- [ ] 主题切换（深色/浅色）
+- [ ] 后端 API 接入
+- [ ] 用户个人中心
+- [ ] 数据可视化图表
