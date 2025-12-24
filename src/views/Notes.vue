@@ -829,75 +829,81 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
-/* ========== 页面基础样式 ========== */
+/* ========== 页面基础样式 - 浅色 Apple 风格 ========== */
 .notes-page {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  background: #f5f5f7;
 }
 
-/* ========== 动态背景 ========== */
+/* ========== 动态背景装饰 ========== */
 .animated-bg {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .bg-shape {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
-  animation: float 20s ease-in-out infinite;
+  filter: blur(100px);
+  opacity: 0.12;
+  animation: float 25s ease-in-out infinite;
 }
 
 .shape-1 {
-  width: 400px;
-  height: 400px;
-  background: #667eea;
-  top: -100px;
-  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  top: -150px;
+  right: -150px;
   animation-delay: 0s;
 }
 
 .shape-2 {
-  width: 300px;
-  height: 300px;
-  background: #f093fb;
-  bottom: -50px;
-  left: -50px;
-  animation-delay: 5s;
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  bottom: -100px;
+  left: -100px;
+  animation-delay: 8s;
 }
 
 .shape-3 {
-  width: 350px;
-  height: 350px;
-  background: #4facfe;
+  width: 450px;
+  height: 450px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   top: 50%;
   left: 50%;
-  animation-delay: 10s;
+  animation-delay: 15s;
 }
 
 @keyframes float {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(30px, -30px) scale(1.1); }
-  50% { transform: translate(-20px, 20px) scale(0.9); }
-  75% { transform: translate(-30px, -20px) scale(1.05); }
+  25% { transform: translate(40px, -40px) scale(1.1); }
+  50% { transform: translate(-30px, 30px) scale(0.9); }
+  75% { transform: translate(-40px, -30px) scale(1.05); }
 }
 
-/* ========== 导航栏 ========== */
+/* ========== 导航栏 - Apple 风格 ========== */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(15, 12, 41, 0.85);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 
 .navbar-content {
@@ -921,13 +927,13 @@ const handleLogout = async () => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
   padding: 6px 12px;
   border-radius: 10px;
 }
 
 .brand:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.04);
   transform: scale(1.02);
 }
 
@@ -940,7 +946,7 @@ const handleLogout = async () => {
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 
 .brand-name {
@@ -950,7 +956,7 @@ const handleLogout = async () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.01em;
 }
 
 /* 中间搜索区域 */
@@ -968,7 +974,7 @@ const handleLogout = async () => {
 .search-icon {
   position: absolute;
   left: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
   z-index: 1;
 }
 
@@ -977,32 +983,32 @@ const handleLogout = async () => {
 }
 
 .global-search :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
   border-radius: 12px;
   padding-left: 42px;
-  box-shadow: none;
-  transition: all 0.3s;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
 }
 
 .global-search :deep(.el-input__wrapper:hover),
 .global-search :deep(.el-input__wrapper.is-focus) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: #fff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
 }
 
 .global-search :deep(.el-input__inner) {
-  color: #fff;
+  color: #1d1d1f;
   font-size: 14px;
 }
 
 .global-search :deep(.el-input__inner::placeholder) {
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
 }
 
 .global-search :deep(.el-input__clear) {
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
 }
 
 /* 右侧操作区域 */
@@ -1018,7 +1024,7 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding-right: 16px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .action-btn {
@@ -1026,18 +1032,18 @@ const handleLogout = async () => {
   height: 40px;
   padding: 0;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s;
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
+  color: #1d1d1f;
+  transition: all 0.25s ease;
 }
 
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: #e5e5ea;
+  border-color: #d1d1d6;
+  color: #0071e3;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .badge-item {
@@ -1048,7 +1054,7 @@ const handleLogout = async () => {
 .badge-item :deep(.el-badge__content) {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   border: none;
-  box-shadow: 0 2px 8px rgba(245, 87, 108, 0.4);
+  box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
 }
 
 /* 用户下拉区域 */
@@ -1058,16 +1064,17 @@ const handleLogout = async () => {
   gap: 10px;
   padding: 6px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #f5f5f7;
   cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+  border: 1px solid #e5e5ea;
 }
 
 .user-dropdown:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #e5e5ea;
+  border-color: #d1d1d6;
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .user-avatar {
@@ -1077,7 +1084,7 @@ const handleLogout = async () => {
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #1d1d1f;
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1085,7 +1092,7 @@ const handleLogout = async () => {
 }
 
 .dropdown-icon {
-  color: rgba(255, 255, 255, 0.6);
+  color: #86868b;
   transition: transform 0.3s;
   font-size: 14px;
 }
@@ -1099,6 +1106,8 @@ const handleLogout = async () => {
   max-width: 1400px;
   margin: 0 auto;
   padding: 40px 30px;
+  position: relative;
+  z-index: 1;
 }
 
 /* ========== 工具栏 ========== */
@@ -1122,8 +1131,9 @@ const handleLogout = async () => {
   gap: 12px;
   font-size: 32px;
   font-weight: 700;
-  color: #fff;
+  color: #1d1d1f;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .toolbar-right {
@@ -1132,15 +1142,16 @@ const handleLogout = async () => {
 }
 
 .add-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
   border: none;
   height: 40px;
   padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 
 .add-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
 }
 
 /* ========== 分类标签 ========== */
@@ -1157,24 +1168,26 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #6e6e73;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
   white-space: nowrap;
 }
 
 .category-tab:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f5f5f7;
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .category-tab.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
   border-color: transparent;
   color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 
 .category-tab .count {
@@ -1193,15 +1206,15 @@ const handleLogout = async () => {
 }
 
 .note-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   padding: 24px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .note-card::before {
@@ -1215,9 +1228,8 @@ const handleLogout = async () => {
 }
 
 .note-card:hover {
-  background: rgba(255, 255, 255, 0.08);
   transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .note-header {
@@ -1241,7 +1253,7 @@ const handleLogout = async () => {
   display: flex;
   gap: 4px;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.25s ease;
 }
 
 .note-card:hover .note-actions {
@@ -1249,17 +1261,17 @@ const handleLogout = async () => {
 }
 
 .note-actions .el-button {
-  color: rgba(255, 255, 255, 0.6);
+  color: #86868b;
 }
 
 .note-actions .el-button:hover {
-  color: #fff;
+  color: #0071e3;
 }
 
 .note-title {
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: #1d1d1f;
   margin: 0 0 12px;
   line-height: 1.4;
   display: -webkit-box;
@@ -1270,7 +1282,7 @@ const handleLogout = async () => {
 
 .note-content {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #6e6e73;
   line-height: 1.6;
   margin-bottom: 16px;
   max-height: 88px;
@@ -1285,7 +1297,7 @@ const handleLogout = async () => {
   justify-content: space-between;
   align-items: center;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .note-date {
@@ -1293,7 +1305,7 @@ const handleLogout = async () => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
 }
 
 .note-tags {
@@ -1304,7 +1316,7 @@ const handleLogout = async () => {
 
 .more-tags {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
 }
 
 /* ========== 空状态 ========== */
@@ -1320,13 +1332,13 @@ const handleLogout = async () => {
 .empty-state h3 {
   font-size: 24px;
   font-weight: 600;
-  color: #fff;
+  color: #1d1d1f;
   margin-bottom: 10px;
 }
 
 .empty-state p {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #86868b;
   margin-bottom: 30px;
 }
 
@@ -1345,8 +1357,9 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
   border: 2px solid transparent;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .color-option:hover {
@@ -1354,7 +1367,7 @@ const handleLogout = async () => {
 }
 
 .color-option.active {
-  border-color: #fff;
+  border-color: #1d1d1f;
 }
 
 .color-option .el-icon {
@@ -1385,7 +1398,7 @@ const handleLogout = async () => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #e5e5ea;
   background: #fff;
 }
 
@@ -1395,7 +1408,7 @@ const handleLogout = async () => {
   gap: 12px;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: #1d1d1f;
 }
 
 .header-right {
@@ -1407,13 +1420,13 @@ const handleLogout = async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f5f7fa;
+  background: #f5f5f7;
 }
 
 .editor-header {
   padding: 20px 24px;
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #e5e5ea;
 }
 
 .title-input {
@@ -1429,8 +1442,8 @@ const handleLogout = async () => {
 
 .title-input :deep(.el-input__inner) {
   font-size: 24px;
-  font-weight: bold;
-  color: #303133;
+  font-weight: 700;
+  color: #1d1d1f;
 }
 
 .editor-meta {
@@ -1449,13 +1462,14 @@ const handleLogout = async () => {
 .color-option-inline {
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
   border: 2px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .color-option-inline:hover {
@@ -1463,7 +1477,7 @@ const handleLogout = async () => {
 }
 
 .color-option-inline.active {
-  border-color: #409EFF;
+  border-color: #0071e3;
 }
 
 .color-option-inline .el-icon {
@@ -1477,14 +1491,15 @@ const handleLogout = async () => {
   flex-direction: column;
   background: #fff;
   margin: 16px 24px 24px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .editor-toolbar {
-  border-bottom: 1px solid #e4e7ed;
-  background: #fafafa;
+  border-bottom: 1px solid #e5e5ea;
+  background: #f9f9f9;
 }
 
 .editor-toolbar :deep(.w-e-toolbar) {
@@ -1504,21 +1519,22 @@ const handleLogout = async () => {
 }
 
 .editor-content :deep(.w-e-text-placeholder) {
-  color: #999;
+  color: #86868b;
   font-style: normal;
 }
 
 /* 代码块高亮样式 */
 .editor-content :deep(pre) {
-  background: #f5f7fa;
+  background: #f5f5f7;
   border-radius: 8px;
   padding: 16px;
   margin: 12px 0;
   overflow-x: auto;
+  border: 1px solid #e5e5ea;
 }
 
 .editor-content :deep(code) {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', monospace;
   font-size: 14px;
   line-height: 1.6;
 }
@@ -1527,12 +1543,13 @@ const handleLogout = async () => {
 .detail-content {
   font-size: 16px;
   line-height: 1.8;
-  color: #333;
+  color: #1d1d1f;
   margin-bottom: 20px;
   padding: 20px;
-  background: #f5f7fa;
+  background: #f9f9f9;
   border-radius: 12px;
   overflow-x: auto;
+  border: 1px solid #e5e5ea;
 }
 
 .detail-content :deep(h1) {
@@ -1540,7 +1557,7 @@ const handleLogout = async () => {
   font-weight: 700;
   margin: 20px 0 12px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid #e5e5ea;
 }
 
 .detail-content :deep(h2) {
@@ -1548,7 +1565,7 @@ const handleLogout = async () => {
   font-weight: 600;
   margin: 18px 0 10px;
   padding-bottom: 6px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e5e5ea;
 }
 
 .detail-content :deep(h3) {
@@ -1562,27 +1579,30 @@ const handleLogout = async () => {
 }
 
 .detail-content :deep(code) {
-  background: #f0f0f0;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: #f0f0f5;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
   font-size: 14px;
-  color: #e83e8c;
+  color: #d73a49;
+  border: 1px solid #e5e5ea;
 }
 
 .detail-content :deep(pre) {
-  background: #282c34;
-  color: #abb2bf;
+  background: #1d1d1f;
+  color: #f5f5f7;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow-x: auto;
   margin: 12px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .detail-content :deep(pre code) {
   background: transparent;
   color: inherit;
   padding: 0;
+  border: none;
 }
 
 .detail-content :deep(ul),
@@ -1597,29 +1617,34 @@ const handleLogout = async () => {
 
 .detail-content :deep(blockquote) {
   border-left: 4px solid #409EFF;
-  padding-left: 16px;
-  margin: 12px 0;
-  color: #666;
-  background: #f9f9f9;
   padding: 12px 16px;
-  border-radius: 4px;
+  margin: 12px 0;
+  color: #6e6e73;
+  background: #f5f5f7;
+  border-radius: 0 8px 8px 0;
+  border: 1px solid #e5e5ea;
+  border-left: 4px solid #409EFF;
 }
 
 .detail-content :deep(table) {
   width: 100%;
   border-collapse: collapse;
   margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e5ea;
 }
 
 .detail-content :deep(th),
 .detail-content :deep(td) {
-  border: 1px solid #ddd;
+  border: 1px solid #e5e5ea;
   padding: 10px 14px;
   text-align: left;
 }
 
 .detail-content :deep(th) {
-  background: #f5f7fa;
+  background: #f5f5f7;
   font-weight: 600;
 }
 
@@ -1627,11 +1652,12 @@ const handleLogout = async () => {
   max-width: 100%;
   border-radius: 8px;
   margin: 12px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .detail-content :deep(hr) {
   border: none;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #e5e5ea;
   margin: 20px 0;
 }
 
@@ -1838,6 +1864,9 @@ const handleLogout = async () => {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
   letter-spacing: -0.005em;
   border-left: 1px solid rgba(0, 0, 0, 0.06);
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 /* 内容样式 */
@@ -2088,8 +2117,8 @@ const handleLogout = async () => {
 }
 
 :deep(.el-select) {
-  --el-select-bg-color: rgba(255, 255, 255, 0.1);
-  --el-select-border-color: rgba(255, 255, 255, 0.2);
-  --el-select-input-color: #fff;
+  --el-select-bg-color: #f5f5f7;
+  --el-select-border-color: #e5e5ea;
+  --el-select-input-color: #1d1d1f;
 }
 </style>

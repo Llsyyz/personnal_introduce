@@ -5,7 +5,7 @@
 
 <template>
   <div class="home-page">
-    <!-- 动态背景 -->
+    <!-- 动态背景装饰 -->
     <div class="animated-bg">
       <div class="bg-shape shape-1"></div>
       <div class="bg-shape shape-2"></div>
@@ -499,75 +499,81 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
-/* ========== 页面基础样式 ========== */
+/* ========== 页面基础样式 - 浅色 Apple 风格 ========== */
 .home-page {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  background: #f5f5f7;
 }
 
-/* ========== 动态背景 ========== */
+/* ========== 动态背景装饰 ========== */
 .animated-bg {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .bg-shape {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  animation: float 20s ease-in-out infinite;
+  filter: blur(100px);
+  opacity: 0.15;
+  animation: float 25s ease-in-out infinite;
 }
 
 .shape-1 {
-  width: 400px;
-  height: 400px;
-  background: #667eea;
-  top: -100px;
-  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  top: -150px;
+  right: -150px;
   animation-delay: 0s;
 }
 
 .shape-2 {
-  width: 300px;
-  height: 300px;
-  background: #f093fb;
-  bottom: -50px;
-  left: -50px;
-  animation-delay: 5s;
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  bottom: -100px;
+  left: -100px;
+  animation-delay: 8s;
 }
 
 .shape-3 {
-  width: 350px;
-  height: 350px;
-  background: #4facfe;
+  width: 450px;
+  height: 450px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   top: 50%;
   left: 50%;
-  animation-delay: 10s;
+  animation-delay: 15s;
 }
 
 @keyframes float {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  25% { transform: translate(30px, -30px) scale(1.1); }
-  50% { transform: translate(-20px, 20px) scale(0.9); }
-  75% { transform: translate(-30px, -20px) scale(1.05); }
+  25% { transform: translate(40px, -40px) scale(1.1); }
+  50% { transform: translate(-30px, 30px) scale(0.9); }
+  75% { transform: translate(-40px, -30px) scale(1.05); }
 }
 
-/* ========== 导航栏 ========== */
+/* ========== 导航栏 - Apple 风格 ========== */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(15, 12, 41, 0.85);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 
 .navbar-content {
@@ -591,13 +597,13 @@ const handleLogout = async () => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
   padding: 6px 12px;
   border-radius: 10px;
 }
 
 .brand:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.04);
   transform: scale(1.02);
 }
 
@@ -610,7 +616,7 @@ const handleLogout = async () => {
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 
 .brand-name {
@@ -620,7 +626,7 @@ const handleLogout = async () => {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.01em;
 }
 
 /* 中间搜索区域 */
@@ -638,7 +644,7 @@ const handleLogout = async () => {
 .search-icon {
   position: absolute;
   left: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
   z-index: 1;
 }
 
@@ -647,32 +653,32 @@ const handleLogout = async () => {
 }
 
 .global-search :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
   border-radius: 12px;
   padding-left: 42px;
-  box-shadow: none;
-  transition: all 0.3s;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
 }
 
 .global-search :deep(.el-input__wrapper:hover),
 .global-search :deep(.el-input__wrapper.is-focus) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: #fff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
 }
 
 .global-search :deep(.el-input__inner) {
-  color: #fff;
+  color: #1d1d1f;
   font-size: 14px;
 }
 
 .global-search :deep(.el-input__inner::placeholder) {
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
 }
 
 .global-search :deep(.el-input__clear) {
-  color: rgba(255, 255, 255, 0.5);
+  color: #86868b;
 }
 
 /* 右侧操作区域 */
@@ -688,7 +694,7 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding-right: 16px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .action-btn {
@@ -696,18 +702,18 @@ const handleLogout = async () => {
   height: 40px;
   padding: 0;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s;
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
+  color: #1d1d1f;
+  transition: all 0.25s ease;
 }
 
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: #e5e5ea;
+  border-color: #d1d1d6;
+  color: #0071e3;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* 用户下拉区域 */
@@ -717,16 +723,17 @@ const handleLogout = async () => {
   gap: 10px;
   padding: 6px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: #f5f5f7;
   cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+  border: 1px solid #e5e5ea;
 }
 
 .user-dropdown:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #e5e5ea;
+  border-color: #d1d1d6;
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .user-avatar {
@@ -736,7 +743,7 @@ const handleLogout = async () => {
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #1d1d1f;
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -744,7 +751,7 @@ const handleLogout = async () => {
 }
 
 .dropdown-icon {
-  color: rgba(255, 255, 255, 0.6);
+  color: #86868b;
   transition: transform 0.3s;
   font-size: 14px;
 }
@@ -758,6 +765,8 @@ const handleLogout = async () => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
+  position: relative;
+  z-index: 1;
 }
 
 /* ========== 英雄区域 ========== */
@@ -790,20 +799,22 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
   border-radius: 50px;
-  color: #fff;
+  color: #667eea;
   font-size: 14px;
+  font-weight: 600;
   margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.2);
 }
 
 .hero-title {
   font-size: 56px;
   font-weight: 800;
-  color: #fff;
+  color: #1d1d1f;
   line-height: 1.1;
   margin-bottom: 20px;
+  letter-spacing: -0.03em;
 }
 
 .hero-title .highlight {
@@ -815,7 +826,7 @@ const handleLogout = async () => {
 
 .hero-subtitle {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #6e6e73;
   margin-bottom: 32px;
   line-height: 1.6;
 }
@@ -828,31 +839,34 @@ const handleLogout = async () => {
 .hero-btn {
   padding: 16px 32px;
   font-size: 16px;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 600;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
 }
 
 .hero-btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
   border: none;
   color: #fff;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3);
 }
 
 .hero-btn.primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
 }
 
 .hero-btn.secondary {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: #fff;
+  border: 1px solid #e5e5ea;
+  color: #1d1d1f;
 }
 
 .hero-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #f5f5f7;
+  border-color: #d1d1d6;
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* ========== 视觉装饰区域 ========== */
@@ -864,15 +878,16 @@ const handleLogout = async () => {
 .floating-card {
   position: absolute;
   padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #fff;
+  color: #1d1d1f;
   animation: floatCard 6s ease-in-out infinite;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .card-1 {
@@ -902,6 +917,7 @@ const handleLogout = async () => {
 .card-label {
   font-size: 16px;
   font-weight: 600;
+  color: #1d1d1f;
 }
 
 /* ========== 统计卡片区域 ========== */
@@ -913,9 +929,8 @@ const handleLogout = async () => {
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 20px;
   padding: 28px;
   display: flex;
@@ -923,12 +938,13 @@ const handleLogout = async () => {
   gap: 20px;
   animation: fadeInUp 0.8s ease-out backwards;
   animation-delay: var(--delay);
-  transition: all 0.3s;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .stat-card:hover {
-  background: rgba(255, 255, 255, 0.08);
   transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -947,14 +963,15 @@ const handleLogout = async () => {
 .stat-value {
   font-size: 32px;
   font-weight: 800;
-  color: #fff;
+  color: #1d1d1f;
   line-height: 1;
   margin-bottom: 8px;
 }
 
 .stat-label {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: #86868b;
+  font-weight: 500;
 }
 
 /* ========== 时间轴区域 ========== */
@@ -975,8 +992,9 @@ const handleLogout = async () => {
   gap: 12px;
   font-size: 32px;
   font-weight: 700;
-  color: #fff;
+  color: #1d1d1f;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 /* ========== 时间轴样式 ========== */
@@ -993,7 +1011,7 @@ const handleLogout = async () => {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, transparent 0%, rgba(102, 126, 234, 0.5) 50%, transparent 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(102, 126, 234, 0.3) 50%, transparent 100%);
   transform: translateX(-50%);
 }
 
@@ -1024,8 +1042,8 @@ const handleLogout = async () => {
   height: 20px;
   border-radius: 50%;
   transform: translateX(-50%);
-  border: 4px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 20px currentColor;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 3px var(--dot-color, #667eea), 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1;
 }
 
@@ -1044,17 +1062,17 @@ const handleLogout = async () => {
 .timeline-content {
   flex: 1;
   max-width: calc(50% - 40px);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 20px;
   padding: 28px;
-  transition: all 0.3s;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
 .timeline-content:hover {
-  background: rgba(255, 255, 255, 0.08);
   transform: scale(1.02);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .timeline-date {
@@ -1069,13 +1087,13 @@ const handleLogout = async () => {
 .timeline-title {
   font-size: 22px;
   font-weight: 700;
-  color: #fff;
+  color: #1d1d1f;
   margin: 0 0 12px;
 }
 
 .timeline-desc {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #6e6e73;
   line-height: 1.6;
   margin-bottom: 16px;
 }
@@ -1157,6 +1175,6 @@ const handleLogout = async () => {
 }
 
 :deep(.el-empty) {
-  --el-empty-description-color: rgba(255, 255, 255, 0.6);
+  --el-empty-description-color: #86868b;
 }
 </style>

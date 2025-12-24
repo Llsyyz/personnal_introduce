@@ -5,13 +5,27 @@
 
 <template>
   <div class="login-page">
+    <!-- 动态背景装饰 -->
+    <div class="bg-decoration">
+      <div class="bg-circle circle-1"></div>
+      <div class="bg-circle circle-2"></div>
+      <div class="bg-circle circle-3"></div>
+    </div>
+
     <!-- 登录容器 -->
     <div class="login-container">
       <!-- 登录卡片 -->
       <div class="login-card">
+        <!-- Logo -->
+        <div class="login-logo">
+          <div class="logo-inner">
+            <el-icon :size="32"><Star /></el-icon>
+          </div>
+        </div>
+
         <!-- 标题 -->
         <h1 class="login-title">欢迎回来</h1>
-        <p class="login-subtitle">请登录您的账户</p>
+        <p class="login-subtitle">登录 NoteSpace 开启创作之旅</p>
 
         <!-- 登录表单 -->
         <el-form
@@ -73,7 +87,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Star } from '@element-plus/icons-vue'
 import { loginApi } from '@/api/login'
 
 // ========== 路由实例 ==========
@@ -166,116 +180,263 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* 页面容器 */
+/* ========== 页面容器 - 浅色 Apple 风格 ========== */
 .login-page {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+  background: #f5f5f7;
 }
 
-/* 登录容器 */
+/* ========== 背景装饰 ========== */
+.bg-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  animation: floatCircle 20s ease-in-out infinite;
+}
+
+.circle-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.circle-2 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  bottom: -50px;
+  left: -50px;
+  animation-delay: 5s;
+}
+
+.circle-3 {
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: 10s;
+}
+
+@keyframes floatCircle {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -30px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.9); }
+  75% { transform: translate(-30px, -20px) scale(1.05); }
+}
+
+/* ========== 登录容器 ========== */
 .login-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  position: relative;
+  z-index: 1;
 }
 
-/* 登录卡片 - Apple 风格 */
+/* ========== 登录卡片 - Apple 风格 ========== */
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 50px 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 24px;
+  padding: 48px 40px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-/* 标题样式 */
+/* ========== Logo ========== */
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.logo-inner {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+/* ========== 标题样式 ========== */
 .login-title {
   text-align: center;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
   color: #1d1d1f;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
 }
 
-/* 副标题样式 */
+/* ========== 副标题样式 ========== */
 .login-subtitle {
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   color: #86868b;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
+  font-weight: 400;
 }
 
-/* 表单项样式 */
+/* ========== 表单项样式 ========== */
 :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  padding: 12px 15px;
-  box-shadow: 0 0 0 1px #d2d2d7;
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow:
+    0 0 0 1px #e5e5ea,
+    inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  background: #fff;
+  transition: all 0.25s ease;
 }
 
 :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px #86868b;
+  box-shadow:
+    0 0 0 1px #d1d1d6,
+    inset 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px #0071e3;
+  box-shadow:
+    0 0 0 2px #0071e3,
+    0 4px 12px rgba(0, 113, 227, 0.15);
 }
 
-/* 表单项间距 */
+:deep(.el-input__inner) {
+  color: #1d1d1f;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: #86868b;
+}
+
+:deep(.el-input__prefix) {
+  color: #86868b;
+}
+
+/* ========== 表单项间距 ========== */
 :deep(.el-form-item) {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
-/* 记住我区域 */
+/* ========== 记住我区域 ========== */
 .remember-me {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
+  margin-bottom: 24px;
 }
 
-/* 忘记密码链接 */
+:deep(.el-checkbox__label) {
+  color: #6e6e73;
+  font-size: 14px;
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #0071e3;
+  border-color: #0071e3;
+}
+
+/* ========== 忘记密码链接 ========== */
 .forget-link {
   color: #0071e3;
   font-size: 14px;
-  transition: opacity 0.3s;
+  transition: all 0.2s ease;
 }
 
 .forget-link:hover {
-  opacity: 0.7;
+  color: #0077ed;
+  text-decoration: underline;
 }
 
-/* 登录按钮 - Apple 风格 */
+/* ========== 登录按钮 - Apple 风格 ========== */
 .login-button {
   width: 100%;
-  height: 48px;
-  border-radius: 12px;
-  background: #0071e3;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #0071e3 0%, #0077ed 100%);
   border: none;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 17px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  box-shadow:
+    0 2px 8px rgba(0, 113, 227, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .login-button:hover {
-  background: #0077ed;
+  background: linear-gradient(180deg, #0077ed 0%, #0071e3 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 16px rgba(0, 113, 227, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .login-button:active {
-  background: #0062cc;
+  transform: translateY(0);
+  box-shadow:
+    0 1px 4px rgba(0, 113, 227, 0.2),
+    inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* 测试提示 */
+/* ========== 测试提示 ========== */
 .test-tip {
-  margin-top: 20px;
+  margin-top: 24px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: #86868b;
+  padding: 12px;
+  background: #f5f5f7;
+  border-radius: 10px;
 }
 
 .test-tip p {
   margin: 0;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 36px 24px;
+    border-radius: 20px;
+  }
+
+  .login-title {
+    font-size: 28px;
+  }
+
+  .login-subtitle {
+    font-size: 14px;
+  }
 }
 </style>
