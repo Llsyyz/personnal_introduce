@@ -173,7 +173,7 @@
                 {{ exp.date }}
               </div>
               <h3 class="timeline-title">{{ exp.title }}</h3>
-              <p class="timeline-desc">{{ exp.description }}</p>
+              <div class="timeline-desc" v-html="exp.content || exp.description"></div>
               <div class="timeline-tags" v-if="exp.tags && exp.tags.length">
                 <el-tag
                   v-for="tag in exp.tags"
@@ -209,68 +209,99 @@
       </section>
     </div>
 
-    <!-- 添加经历对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      title="添加新经历"
-      width="500px"
+    <!-- 添加经历侧边抽屉 -->
+    <el-drawer
+      v-model="drawerVisible"
+      direction="rtl"
+      :size="'85%'"
       :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      class="experience-drawer"
+      destroy-on-close
     >
-      <el-form :model="experienceForm" label-width="80px">
-        <el-form-item label="标题">
-          <el-input v-model="experienceForm.title" placeholder="经历标题" />
-        </el-form-item>
-        <el-form-item label="日期">
-          <el-date-picker
-            v-model="experienceForm.date"
-            type="date"
-            placeholder="选择日期"
-            style="width: 100%"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-          />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input
-            v-model="experienceForm.description"
-            type="textarea"
-            :rows="4"
-            placeholder="描述这段经历..."
-          />
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-select
-            v-model="experienceForm.tags"
-            multiple
-            placeholder="选择标签"
-            style="width: 100%"
-          >
-            <el-option label="学习" value="学习" />
-            <el-option label="工作" value="工作" />
-            <el-option label="旅行" value="旅行" />
-            <el-option label="成就" value="成就" />
-            <el-option label="其他" value="其他" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+      <template #header>
+        <div class="drawer-header">
+          <div class="header-left">
+            <el-icon :size="20"><EditPen /></el-icon>
+            <span>添加经历</span>
+          </div>
+          <div class="header-right">
+            <el-button @click="handleCancel">取消</el-button>
+            <el-button type="primary" @click="handleSubmit">保存</el-button>
+          </div>
+        </div>
       </template>
-    </el-dialog>
+
+      <div class="experience-editor-container">
+        <div class="editor-header">
+          <el-input
+            v-model="experienceForm.title"
+            placeholder="给经历起个标题..."
+            size="large"
+            class="title-input"
+          />
+          <div class="editor-meta">
+            <el-date-picker
+              v-model="experienceForm.date"
+              type="date"
+              placeholder="选择日期"
+              size="large"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+            />
+            <el-select
+              v-model="experienceForm.tags"
+              multiple
+              placeholder="标签..."
+              size="large"
+              style="width: 200px"
+              allow-create
+              filterable
+              collapse-tags
+              collapse-tags-tooltip
+            >
+              <el-option label="学习" value="学习" />
+              <el-option label="工作" value="工作" />
+              <el-option label="旅行" value="旅行" />
+              <el-option label="成就" value="成就" />
+              <el-option label="其他" value="其他" />
+            </el-select>
+          </div>
+        </div>
+
+        <!-- 富文本编辑器 -->
+        <div class="rich-editor-wrapper">
+          <Toolbar
+            class="editor-toolbar"
+            :editor="editorRef"
+            :defaultConfig="toolbarConfig"
+            mode="default"
+          />
+          <Editor
+            class="editor-content"
+            v-model="experienceForm.content"
+            :defaultConfig="editorConfig"
+            mode="default"
+            @onCreated="handleEditorCreated"
+          />
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed, shallowRef, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, Setting, SwitchButton, Trophy,
   Compass, Plus, SuccessFilled, Clock, Collection,
-  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search
+  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search, EditPen
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
+import '@wangeditor/editor/dist/css/style.css'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
 // ========== 路由实例 ==========
 const router = useRouter()
@@ -293,14 +324,51 @@ const searchKeyword = ref('')
 // 时间轴引用
 const timelineRef = ref(null)
 
-// 对话框状态
-const dialogVisible = ref(false)
+// 编辑器相关
+const editorRef = shallowRef()
+
+// 编辑器配置
+const toolbarConfig = {
+  toolbarKeys: [
+    'headerSelect',
+    'bold',
+    'italic',
+    'underline',
+    'through',
+    '|',
+    'bulletedList',
+    'numberedList',
+    'todo',
+    '|',
+    'fontSize',
+    'lineHeight',
+    'color',
+    'bgColor',
+    '|',
+    'divider',
+    '|',
+    'undo',
+    'redo'
+  ]
+}
+
+const editorConfig = {
+  placeholder: '记录这段经历...',
+  MENU_CONF: {}
+}
+
+// 抽屉状态
+const drawerVisible = ref(false)
+
+// 是否编辑模式
+const isEditMode = ref(false)
 
 // 经历表单
 const experienceForm = reactive({
+  id: null,
   title: '',
   date: '',
-  description: '',
+  content: '',
   tags: []
 })
 
@@ -392,6 +460,10 @@ onUnmounted(() => {
   if (timer) {
     clearInterval(timer)
   }
+  // 销毁编辑器实例
+  if (editorRef.value) {
+    editorRef.value.destroy()
+  }
 })
 
 // ========== 方法 ==========
@@ -431,24 +503,45 @@ const handleCommand = (command) => {
 
 // 添加经历
 const handleAddExperience = () => {
+  isEditMode.value = false
+  experienceForm.id = null
   experienceForm.title = ''
   experienceForm.date = ''
-  experienceForm.description = ''
+  experienceForm.content = ''
   experienceForm.tags = []
-  dialogVisible.value = true
+  drawerVisible.value = true
+}
+
+// 取消编辑
+const handleCancel = () => {
+  if (editorRef.value) {
+    editorRef.value.clear()
+  }
+  drawerVisible.value = false
 }
 
 // 提交经历
 const handleSubmit = () => {
-  if (!experienceForm.title || !experienceForm.date || !experienceForm.description) {
-    ElMessage.warning('请填写完整信息')
+  if (!experienceForm.title || !experienceForm.date) {
+    ElMessage.warning('请填写标题和日期')
+    return
+  }
+
+  // 获取编辑器的 HTML 内容
+  const content = editorRef.value?.getHtml() || ''
+  if (!content || content === '<p><br></p>') {
+    ElMessage.warning('请填写内容')
     return
   }
 
   const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399']
   const newExp = {
     id: Date.now(),
-    ...experienceForm,
+    title: experienceForm.title,
+    date: experienceForm.date,
+    description: '', // 保持兼容，显示时使用 content
+    content: content,
+    tags: experienceForm.tags,
     color: colors[Math.floor(Math.random() * colors.length)]
   }
 
@@ -456,7 +549,12 @@ const handleSubmit = () => {
   localStorage.setItem('experiences', JSON.stringify(experiences.value))
 
   ElMessage.success('添加成功')
-  dialogVisible.value = false
+  drawerVisible.value = false
+}
+
+// 编辑器创建完成
+const handleEditorCreated = (editor) => {
+  editorRef.value = editor
 }
 
 // 删除经历
@@ -799,13 +897,13 @@ const handleLogout = async () => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: #f5f5f7;
   border-radius: 50px;
-  color: #667eea;
+  color: #6e6e73;
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 24px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid #e5e5ea;
 }
 
 .hero-title {
@@ -818,10 +916,8 @@ const handleLogout = async () => {
 }
 
 .hero-title .highlight {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #6e6e73;
+  -webkit-text-fill-color: initial;
 }
 
 .hero-subtitle {
@@ -845,15 +941,16 @@ const handleLogout = async () => {
 }
 
 .hero-btn.primary {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background: #1d1d1f;
   border: none;
   color: #fff;
-  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .hero-btn.primary:hover {
+  background: #000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .hero-btn.secondary {
@@ -1096,6 +1193,42 @@ const handleLogout = async () => {
   color: #6e6e73;
   line-height: 1.6;
   margin-bottom: 16px;
+  max-height: 120px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 富文本内容样式 */
+.timeline-desc :deep(p) {
+  margin: 8px 0;
+}
+
+.timeline-desc :deep(h1),
+.timeline-desc :deep(h2),
+.timeline-desc :deep(h3) {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 12px 0 8px;
+  color: #1d1d1f;
+}
+
+.timeline-desc :deep(ul),
+.timeline-desc :deep(ol) {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.timeline-desc :deep(li) {
+  margin: 4px 0;
+}
+
+.timeline-desc :deep(code) {
+  background: #f0f0f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #d73a49;
+  font-family: 'SF Mono', monospace;
 }
 
 .timeline-tags {
@@ -1176,5 +1309,116 @@ const handleLogout = async () => {
 
 :deep(.el-empty) {
   --el-empty-description-color: #86868b;
+}
+
+/* ========== 经历编辑抽屉样式 ========== */
+.experience-drawer :deep(.el-drawer__header) {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.experience-drawer :deep(.el-drawer__body) {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e5ea;
+  background: #fff;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+}
+
+.experience-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f5f7;
+}
+
+.editor-header {
+  padding: 20px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5ea;
+}
+
+.title-input {
+  margin-bottom: 16px;
+}
+
+.title-input :deep(.el-input__wrapper) {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
+
+.title-input :deep(.el-input__inner) {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.editor-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rich-editor-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  margin: 16px 24px 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.editor-toolbar {
+  border-bottom: 1px solid #e5e5ea;
+  background: #f9f9f9;
+}
+
+.editor-toolbar :deep(.w-e-toolbar) {
+  border: none;
+  background: transparent;
+  padding: 10px 20px;
+  flex-wrap: wrap;
+}
+
+.editor-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.editor-content :deep(.w-e-text-container) {
+  background: #fff;
+}
+
+.editor-content :deep(.w-e-text-placeholder) {
+  color: #86868b;
+  font-style: normal;
 }
 </style>

@@ -227,12 +227,11 @@
       </div>
     </div>
 
-    <!-- 全屏编辑弹窗 -->
+    <!-- 编辑笔记侧边抽屉 -->
     <el-drawer
       v-model="dialogVisible"
-      :title="isEdit ? '编辑笔记' : '新建笔记'"
-      direction="btt"
-      :size="'95%'"
+      direction="rtl"
+      :size="'85%'"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       class="note-editor-drawer"
@@ -353,41 +352,41 @@
       <Transition name="fade">
         <div v-if="viewDialogVisible" class="note-fullscreen" :style="{ '--note-color': currentNote?.color || '#409EFF' }" @click.self="viewDialogVisible = false">
           <div class="note-fullscreen-content" v-if="currentNote">
-            <!-- 装饰背景 -->
-            <div class="detail-bg-decoration"></div>
-
-            <!-- 顶部导航 -->
-            <div class="detail-navbar">
-              <div class="navbar-left">
-                <div class="detail-category">
-                  <el-icon><component :is="getCategoryIcon(currentNote.category)" /></el-icon>
-                  <span>{{ currentNote.category }}</span>
-                </div>
-                <span class="detail-date">{{ formatDate(currentNote.createdAt) }}</span>
-              </div>
-              <div class="navbar-right">
-                <el-icon class="close-icon" @click="viewDialogVisible = false">
-                  <Close />
-                </el-icon>
-              </div>
+            <!-- 关闭按钮 -->
+            <div class="detail-close-btn" @click="viewDialogVisible = false">
+              <el-icon :size="20"><Close /></el-icon>
             </div>
 
-            <!-- 内容滚动区域 -->
-            <div class="detail-scroll-area">
-              <!-- 标题 -->
-              <h1 class="note-title-view">{{ currentNote.title }}</h1>
+            <!-- 文章容器 -->
+            <div class="article-container">
+              <article class="article">
+                <!-- 元信息 -->
+                <header class="article-header">
+                  <div class="article-meta">
+                    <span class="article-category" :style="{ color: currentNote.color }">
+                      <el-icon><component :is="getCategoryIcon(currentNote.category)" /></el-icon>
+                      {{ currentNote.category }}
+                    </span>
+                    <span class="article-dot">·</span>
+                    <span class="article-date">{{ formatFullDate(currentNote.createdAt) }}</span>
+                  </div>
+                  <h1 class="article-title">{{ currentNote.title }}</h1>
+                  <div class="article-tags" v-if="currentNote.tags && currentNote.tags.length">
+                    <span v-for="tag in currentNote.tags" :key="tag" class="article-tag">#{{ tag }}</span>
+                  </div>
+                </header>
 
-              <!-- 正文内容 -->
-              <div class="detail-content" v-html="currentNote.content"></div>
+                <!-- 文章内容 -->
+                <div class="article-body" v-html="currentNote.content"></div>
 
-              <!-- 标签 -->
-              <div class="detail-tags-wrapper" v-if="currentNote.tags && currentNote.tags.length">
-                <div class="detail-tags">
-                  <span v-for="tag in currentNote.tags" :key="tag" class="tag-item">
-                    {{ tag }}
-                  </span>
+                <!-- 文章底部装饰 -->
+                <div class="article-footer">
+                  <div class="footer-line"></div>
+                  <div class="footer-icon" :style="{ color: currentNote.color }">
+                    <el-icon :size="24"><Notebook /></el-icon>
+                  </div>
                 </div>
-              </div>
+              </article>
             </div>
           </div>
         </div>
@@ -473,26 +472,20 @@ const toolbarConfig = {
     'todo',
     '|',
     'fontSize',
-    'fontFamily',
     'lineHeight',
     'color',
     'bgColor',
     '|',
-    'link',
-    'uploadImage',
-    'insertTable',
-    'codeBlock',
     'divider',
     '|',
     'undo',
-    'redo',
-    'fullScreen'
+    'redo'
   ]
 }
 
 // 编辑器配置
 const editorConfig = {
-  placeholder: '开始写作...支持 Markdown 语法',
+  placeholder: '开始写作...',
   MENU_CONF: {
     // 上传图片配置
     uploadImage: {
@@ -518,7 +511,6 @@ const editorConfig = {
         { text: 'Python', value: 'python' },
         { text: 'Java', value: 'java' },
         { text: 'C++', value: 'cpp' },
-        { text: 'C#', value: 'csharp' },
         { text: 'Go', value: 'go' },
         { text: 'Rust', value: 'rust' },
         { text: 'PHP', value: 'php' },
@@ -526,7 +518,6 @@ const editorConfig = {
         { text: 'Bash', value: 'bash' },
         { text: 'JSON', value: 'json' },
         { text: 'Markdown', value: 'markdown' },
-        { text: 'YAML', value: 'yaml' },
         { text: 'Text', value: 'text' }
       ]
     }
@@ -654,6 +645,19 @@ const formatDate = (dateStr) => {
   if (days === 1) return '昨天'
   if (days < 7) return `${days}天前`
   return date.toLocaleDateString('zh-CN')
+}
+
+// 格式化完整日期（用于文章头部）
+const formatFullDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const weekday = weekdays[date.getDay()]
+
+  return `${year}年${month}月${day}日 ${weekday}`
 }
 
 // 提取纯文本（用于卡片预览）
@@ -1142,16 +1146,17 @@ const handleLogout = async () => {
 }
 
 .add-btn {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background: #1d1d1f;
   border: none;
   height: 40px;
   padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .add-btn:hover {
+  background: #000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 /* ========== 分类标签 ========== */
@@ -1184,10 +1189,10 @@ const handleLogout = async () => {
 }
 
 .category-tab.active {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  background: #1d1d1f;
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .category-tab .count {
@@ -1661,8 +1666,7 @@ const handleLogout = async () => {
   margin: 20px 0;
 }
 
-/* ========== 笔记详情 - 全屏浅色风格 ========== */
-/* 全屏容器 */
+/* ========== 笔记详情 - Medium/Notion 风格 ========== */
 .note-fullscreen {
   --note-color: #409EFF;
   position: fixed;
@@ -1671,19 +1675,16 @@ const handleLogout = async () => {
   right: 0;
   bottom: 0;
   z-index: 9999;
-  background: #f0f0f5;
-  background-image:
-    linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px),
-    linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background: #fff;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* 淡入淡出动画 */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s ease;
 }
 
 .fade-enter-from,
@@ -1697,357 +1698,337 @@ const handleLogout = async () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* 装饰背景 */
-.detail-bg-decoration {
-  position: absolute;
-  top: -150px;
-  right: -150px;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, var(--note-color) 0%, transparent 70%);
-  opacity: 0.06;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(100px);
-}
-
-.detail-bg-decoration::before {
-  content: '';
-  position: absolute;
-  bottom: -100px;
-  left: -100px;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, var(--note-color) 0%, transparent 70%);
-  opacity: 0.04;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(80px);
-}
-
-/* 顶部导航栏 */
-.detail-navbar {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 40px;
   background: #fff;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
-  z-index: 10;
 }
 
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.detail-category {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  background: var(--note-color);
-  color: #fff;
-  box-shadow: 0 2px 12px var(--note-color);
-}
-
-.detail-category .el-icon {
-  font-size: 16px;
-}
-
-.detail-date {
-  color: #86868b;
-  font-size: 14px;
-}
-
-.navbar-right {
-  display: flex;
-  align-items: center;
-}
-
-.close-icon {
-  width: 40px;
-  height: 40px;
+/* 关闭按钮 */
+.detail-close-btn {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e5e5ea;
+  border-radius: 50%;
   cursor: pointer;
-  color: #86868b;
-  font-size: 22px;
-  transition: all 0.3s ease;
+  z-index: 100;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.detail-close-btn:hover {
   background: #f5f5f7;
-  border: 2px solid #e5e5ea;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
-.close-icon:hover {
-  background: #e5e5ea;
-  border-color: #d1d1d6;
-  color: #1d1d1f;
-  transform: rotate(90deg) scale(1.05);
-}
-
-/* 内容滚动区域 */
-.detail-scroll-area {
+/* 文章容器 - Medium 风格 */
+.article-container {
   flex: 1;
   overflow-y: auto;
-  padding: 50px 100px 80px;
-  position: relative;
-  background: #fff;
-  margin: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 60px 0 100px;
+  scroll-behavior: smooth;
 }
 
-/* 左侧装饰线 */
-.detail-scroll-area::before {
-  content: '';
-  position: absolute;
-  left: 30px;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, var(--note-color) 0%, transparent 100%);
-  border-radius: 2px;
-  opacity: 0.6;
+.article-container::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* 滚动条样式 */
-.detail-scroll-area::-webkit-scrollbar {
-  width: 8px;
-}
-
-.detail-scroll-area::-webkit-scrollbar-track {
-  background: #f5f5f7;
-  border-radius: 4px;
-}
-
-.detail-scroll-area::-webkit-scrollbar-thumb {
-  background: #c7c7cc;
-  border-radius: 4px;
-}
-
-.detail-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a6;
-}
-
-/* 标题 */
-.note-title-view {
-  font-size: 46px;
-  font-weight: 700;
-  color: #1d1d1f;
-  text-align: left;
-  margin: 0 0 40px;
-  padding-left: 20px;
-  line-height: 1.2;
-  letter-spacing: -0.04em;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  border-left: 4px solid var(--note-color);
-}
-
-/* 内容区域 */
-.detail-content {
-  font-size: 17px;
-  line-height: 1.85;
-  color: #1d1d1f;
-  margin-bottom: 50px;
-  padding-left: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
-  letter-spacing: -0.005em;
-  border-left: 1px solid rgba(0, 0, 0, 0.06);
+.article-container::-webkit-scrollbar-track {
   background: transparent;
-  border: none;
-  padding: 0;
 }
 
-/* 内容样式 */
-.detail-content :deep(h1) {
-  font-size: 36px;
-  font-weight: 700;
-  margin: 44px 0 22px;
-  color: #1d1d1f;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  padding-bottom: 12px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+.article-container::-webkit-scrollbar-thumb {
+  background: #e5e5ea;
+  border-radius: 3px;
 }
 
-.detail-content :deep(h2) {
-  font-size: 28px;
-  font-weight: 600;
-  margin: 36px 0 18px;
-  color: #1d1d1f;
-  letter-spacing: -0.015em;
-  line-height: 1.3;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+.article-container::-webkit-scrollbar-thumb:hover {
+  background: #d1d1d6;
 }
 
-.detail-content :deep(h3) {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 28px 0 14px;
-  color: #1d1d1f;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
+.article {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
 }
 
-.detail-content :deep(p) {
-  margin: 16px 0;
-  line-height: 1.85;
-  color: #1d1d1f;
+/* 文章头部 */
+.article-header {
+  margin-bottom: 56px;
 }
 
-.detail-content :deep(code) {
-  background: #f0f0f5;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', monospace;
-  font-size: 14px;
-  color: #d73a49;
-  border: 1px solid #e5e5ea;
-}
-
-.detail-content :deep(pre) {
-  background: #1d1d1f;
-  color: #f5f5f7;
-  padding: 20px 24px;
-  border-radius: 10px;
-  overflow-x: auto;
-  margin: 24px 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.detail-content :deep(pre code) {
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  font-size: 14px;
-  border: none;
-}
-
-.detail-content :deep(ul),
-.detail-content :deep(ol) {
-  padding-left: 24px;
-  margin: 16px 0;
-}
-
-.detail-content :deep(li) {
-  margin: 10px 0;
-  line-height: 1.85;
-  color: #1d1d1f;
-}
-
-.detail-content :deep(blockquote) {
-  border-left: 4px solid var(--note-color);
-  padding: 16px 20px;
-  margin: 24px 0;
-  color: #6e6e73;
-  background: #f5f5f7;
-  border-radius: 0 8px 8px 0;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-.detail-content :deep(table) {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 24px 0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.detail-content :deep(th),
-.detail-content :deep(td) {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 12px 16px;
-  text-align: left;
-}
-
-.detail-content :deep(th) {
-  background: #f5f5f7;
-  font-weight: 600;
-  color: #1d1d1f;
-  font-size: 14px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-}
-
-.detail-content :deep(td) {
-  background: #fff;
-  color: #1d1d1f;
-}
-
-.detail-content :deep(img) {
-  max-width: 100%;
-  border-radius: 12px;
-  margin: 24px 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.detail-content :deep(hr) {
-  border: none;
-  border-top: 2px solid rgba(0, 0, 0, 0.08);
-  margin: 36px 0;
-}
-
-.detail-content :deep(a) {
-  color: var(--note-color);
-  text-decoration: none;
-  transition: all 0.2s;
-  border-bottom: 1px solid transparent;
-}
-
-.detail-content :deep(a:hover) {
-  color: #0077ed;
-  border-bottom-color: var(--note-color);
-}
-
-/* 标签区域 */
-.detail-tags-wrapper {
+.article-meta {
   display: flex;
-  justify-content: flex-start;
-  padding: 28px 20px 0;
-  margin-left: 20px;
-  border-top: 2px solid rgba(0, 0, 0, 0.08);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
 }
 
-.detail-tags {
+.article-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.article-category .el-icon {
+  font-size: 16px;
+}
+
+.article-dot {
+  color: #c7c7cc;
+  font-weight: 500;
+}
+
+.article-date {
+  color: #86868b;
+  font-weight: 500;
+}
+
+.article-title {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  color: #1d1d1f;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+}
+
+.article-tags {
   display: flex;
   gap: 12px;
+  margin-top: 24px;
   flex-wrap: wrap;
 }
 
-.tag-item {
-  display: inline-block;
-  padding: 8px 18px;
-  border-radius: 20px;
+.article-tag {
   font-size: 14px;
+  color: #86868b;
   font-weight: 500;
-  letter-spacing: -0.01em;
-  transition: all 0.3s;
-  background: #f5f5f7;
-  color: #1d1d1f;
-  border: 1px solid #e5e5ea;
+  transition: color 0.2s ease;
 }
 
-.tag-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: #e5e5ea;
-  border-color: #d1d1d6;
+.article-tag:hover {
+  color: var(--note-color);
+}
+
+/* 文章内容 - Notion 风格排版 */
+.article-body {
+  font-size: 18px;
+  line-height: 1.9;
+  color: #37352f;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  letter-spacing: -0.003em;
+}
+
+/* 标题样式 */
+.article-body :deep(h1) {
+  font-size: 38px;
+  font-weight: 700;
+  margin: 56px 0 20px;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #1d1d1f;
+}
+
+.article-body :deep(h2) {
+  font-size: 30px;
+  font-weight: 700;
+  margin: 48px 0 16px;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: #1d1d1f;
+}
+
+.article-body :deep(h3) {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 36px 0 14px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: #1d1d1f;
+}
+
+.article-body :deep(h4) {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 28px 0 12px;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  color: #1d1d1f;
+}
+
+/* 段落 */
+.article-body :deep(p) {
+  margin: 20px 0;
+  line-height: 1.9;
+  color: #37352f;
+}
+
+.article-body :deep(p:first-of-type) {
+  font-size: 22px;
+  line-height: 1.6;
+  color: #5a5a5a;
+  font-weight: 400;
+}
+
+/* 行内代码 */
+.article-body :deep(code) {
+  background: rgba(135, 131, 120, 0.15);
+  color: #eb5757;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', monospace;
+  font-size: 85%;
+  font-weight: 500;
+}
+
+/* 代码块 */
+.article-body :deep(pre) {
+  background: #1d1d1f;
+  color: #f5f5f7;
+  padding: 18px 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 24px 0;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.article-body :deep(pre code) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+/* 列表 */
+.article-body :deep(ul),
+.article-body :deep(ol) {
+  padding-left: 24px;
+  margin: 20px 0;
+}
+
+.article-body :deep(li) {
+  margin: 8px 0;
+  line-height: 1.8;
+  color: #37352f;
+}
+
+.article-body :deep(li::marker) {
+  color: var(--note-color);
+}
+
+/* 引用块 */
+.article-body :deep(blockquote) {
+  border-left: 3px solid var(--note-color);
+  padding: 16px 0 16px 20px;
+  margin: 28px 0;
+  color: #6e6e73;
+  font-style: italic;
+  background: linear-gradient(to right, rgba(135, 131, 120, 0.08), transparent);
+}
+
+/* 表格 */
+.article-body :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 28px 0;
+  font-size: 16px;
+}
+
+.article-body :deep(th),
+.article-body :deep(td) {
+  border: 1px solid #e5e5ea;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.article-body :deep(th) {
+  background: #f5f5f7;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.article-body :deep(td) {
+  color: #37352f;
+}
+
+.article-body :deep(tr:hover td) {
+  background: #f9f9f9;
+}
+
+/* 图片 */
+.article-body :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 32px 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 分割线 */
+.article-body :deep(hr) {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e5e5ea, transparent);
+  margin: 48px 0;
+}
+
+/* 链接 */
+.article-body :deep(a) {
+  color: var(--note-color);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.article-body :deep(a:hover) {
+  border-bottom-color: var(--note-color);
+}
+
+/* 待办事项 */
+.article-body :deep(input[type="checkbox"]) {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  accent-color: var(--note-color);
+}
+
+/* 文章底部装饰 */
+.article-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 80px;
+  padding-top: 40px;
+}
+
+.footer-line {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--note-color), transparent);
+  margin-bottom: 20px;
+}
+
+.footer-icon {
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.footer-icon:hover {
+  opacity: 1;
 }
 
 /* ========== 响应式设计 ========== */
@@ -2072,40 +2053,35 @@ const handleLogout = async () => {
   }
 
   /* 笔记详情全屏响应式 */
-  .detail-navbar {
-    padding: 16px 20px;
+  .article {
+    padding: 0 24px;
   }
 
-  .detail-scroll-area {
-    padding: 40px 24px 60px;
+  .article-title {
+    font-size: 36px;
   }
 
-  .note-title-view {
-    font-size: 32px;
-    margin-bottom: 24px;
+  .article-body {
+    font-size: 17px;
   }
 
-  .detail-content {
-    font-size: 16px;
+  .article-body :deep(h1) {
+    font-size: 30px;
   }
 
-  .detail-content :deep(h1) {
-    font-size: 28px;
-  }
-
-  .detail-content :deep(h2) {
+  .article-body :deep(h2) {
     font-size: 24px;
   }
 
-  .detail-content :deep(h3) {
+  .article-body :deep(h3) {
     font-size: 20px;
   }
 
-  .detail-bg-decoration {
-    top: -80px;
-    right: -80px;
-    width: 250px;
-    height: 250px;
+  .detail-close-btn {
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
   }
 }
 
