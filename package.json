@@ -13,6 +13,7 @@
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-vue": "^5.1.12",
     "@wangeditor/plugin-md": "^1.0.0",
+    "axios": "^1.13.2",
     "element-plus": "^2.5.0",
     "vue": "^3.4.0",
     "vue-router": "^4.2.0"

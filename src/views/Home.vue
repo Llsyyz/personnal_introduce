@@ -109,11 +109,11 @@
           </h1>
           <p class="hero-subtitle">每一次登录，都是新的开始。记录你的精彩历程。</p>
           <div class="hero-actions">
-            <el-button type="primary" size="large" class="hero-btn primary" @click="scrollToTimeline">
+            <el-button size="large" class="hero-btn secondary" @click="scrollToTimeline">
               <el-icon><Compass /></el-icon>
               查看历程
             </el-button>
-            <el-button size="large" class="hero-btn secondary" @click="handleAddExperience">
+            <el-button size="large" class="hero-btn primary" @click="handleAddExperience">
               <el-icon><Plus /></el-icon>
               添加经历
             </el-button>
@@ -292,6 +292,32 @@
         </div>
       </div>
     </el-drawer>
+
+    <!-- 退出登录确认对话框 -->
+    <el-dialog
+      v-model="logoutDialogVisible"
+      width="400px"
+      :show-close="false"
+      class="logout-dialog"
+      align-center
+      destroy-on-close
+    >
+      <div class="logout-content">
+        <div class="logout-icon">
+          <el-icon :size="48"><SwitchButton /></el-icon>
+        </div>
+        <h3 class="logout-title">退出登录</h3>
+        <p class="logout-desc">确定要退出当前账号吗？</p>
+        <div class="logout-actions">
+          <el-button class="logout-btn cancel" @click="logoutDialogVisible = false">
+            取消
+          </el-button>
+          <el-button class="logout-btn confirm" @click="confirmLogout">
+            确认退出
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -377,8 +403,11 @@ const experienceForm = reactive({
   tags: []
 })
 
-// 经历数据列表
-const experiences = ref([
+// 经历数据列表 - 初始为空，避免显示跳动
+const experiences = ref([])
+
+// 默认示例数据（仅在首次使用时展示）
+const defaultExperiences = [
   {
     id: 1,
     title: '开始学习 Vue 3',
@@ -411,7 +440,7 @@ const experiences = ref([
     tags: ['工作'],
     color: '#F56C6C'
   }
-])
+]
 
 // 统计数据
 const stats = computed(() => [
@@ -450,10 +479,14 @@ onMounted(() => {
     userInfo.value = JSON.parse(savedUserInfo)
   }
 
-  // 获取存储的经历数据
+  // 获取存储的经历数据，如果没有则使用默认数据
   const savedExperiences = localStorage.getItem('experiences')
   if (savedExperiences) {
     experiences.value = JSON.parse(savedExperiences)
+  } else {
+    // 首次使用，展示默认数据
+    experiences.value = [...defaultExperiences]
+    localStorage.setItem('experiences', JSON.stringify(defaultExperiences))
   }
 
   // 更新时间
@@ -581,19 +614,22 @@ const getTagType = (index) => {
   return types[index % types.length]
 }
 
-// 退出登录
-const handleLogout = async () => {
-  await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
+// 退出登录对话框状态
+const logoutDialogVisible = ref(false)
 
+// 退出登录
+const handleLogout = () => {
+  logoutDialogVisible.value = true
+}
+
+// 确认退出
+const confirmLogout = async () => {
   try {
     await logoutApi()
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
     ElMessage.success('已退出登录')
+    logoutDialogVisible.value = false
     setTimeout(() => router.push('/login'), 500)
   } catch (error) {
     ElMessage.error('退出失败，请重试')
@@ -1425,5 +1461,78 @@ const handleLogout = async () => {
 .editor-content :deep(.w-e-text-placeholder) {
   color: #86868b;
   font-style: normal;
+}
+
+/* ========== 退出登录对话框样式 ========== */
+.logout-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.logout-dialog :deep(.el-dialog) {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.logout-content {
+  padding: 32px 24px 24px;
+  text-align: center;
+}
+
+.logout-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.1) 0%, rgba(245, 108, 108, 0.05) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f56c6c;
+}
+
+.logout-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 8px;
+}
+
+.logout-desc {
+  font-size: 14px;
+  color: #86868b;
+  margin: 0 0 24px;
+}
+
+.logout-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.logout-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.logout-btn.cancel {
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
+  color: #1d1d1f;
+}
+
+.logout-btn.cancel:hover {
+  background: #e5e5ea;
+}
+
+.logout-btn.confirm {
+  background: #f56c6c;
+  border: none;
+  color: #fff;
+}
+
+.logout-btn.confirm:hover {
+  background: #e85d5d;
 }
 </style>
