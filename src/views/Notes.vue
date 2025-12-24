@@ -49,6 +49,11 @@
                 <el-icon :size="18"><Plus /></el-icon>
               </el-button>
             </el-tooltip>
+            <el-tooltip content="相册" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/gallery')">
+                <el-icon :size="18"><Collection /></el-icon>
+              </el-button>
+            </el-tooltip>
             <el-tooltip content="通知" placement="bottom">
               <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="badge-item">
                 <el-button class="action-btn">
@@ -402,7 +407,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, SwitchButton, HomeFilled, Notebook, Search,
   Plus, Edit, Delete, Calendar, Grid, Reading, Briefcase,
-  Sunny, More, Check, EditPen, Bell, Setting, Close
+  Sunny, More, Check, EditPen, Bell, Setting, Close, Collection
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 import '@wangeditor/editor/dist/css/style.css'

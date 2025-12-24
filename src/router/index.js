@@ -10,6 +10,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const Login = () => import('@/views/Login.vue')
 const Home = () => import('@/views/Home.vue')
 const Notes = () => import('@/views/Notes.vue')
+const Gallery = () => import('@/views/Gallery.vue')
 
 // 定义路由配置
 const routes = [
@@ -40,6 +41,15 @@ const routes = [
     component: Notes,
     meta: {
       title: '我的笔记',
+      requiresAuth: true  // 需要登录才能访问
+    }
+  },
+  {
+    path: '/gallery',
+    name: 'Gallery',
+    component: Gallery,
+    meta: {
+      title: '相册',
       requiresAuth: true  // 需要登录才能访问
     }
   }

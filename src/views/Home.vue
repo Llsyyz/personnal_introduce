@@ -54,6 +54,11 @@
                 <el-icon :size="18"><Notebook /></el-icon>
               </el-button>
             </el-tooltip>
+            <el-tooltip content="相册" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/gallery')">
+                <el-icon :size="18"><Collection /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
 
           <!-- 用户下拉区域 -->
