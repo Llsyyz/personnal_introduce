@@ -401,7 +401,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, shallowRef, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, shallowRef, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -410,6 +410,7 @@ import {
   Sunny, More, Check, EditPen, Bell, Setting, Close, Collection
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
+import { getNotesApi, createNoteApi, updateNoteApi, deleteNoteApi } from '@/api/notes'
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { Boot } from '@wangeditor/editor'
@@ -533,67 +534,19 @@ const editorConfig = {
 const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#722ED1', '#13C2C2', '#F5222D']
 
 // 笔记数据列表
-const notes = ref([
-  {
-    id: 1,
-    title: 'Vue 3 学习笔记',
-    category: '学习',
-    color: '#409EFF',
-    content: 'Vue 3 引入了 Composition API，可以更好地组织代码逻辑。setup 语法糖让代码更简洁，ref 和 reactive 用于创建响应式数据。',
-    tags: ['前端', 'Vue', '重要'],
-    createdAt: '2024-01-15 10:30'
-  },
-  {
-    id: 2,
-    title: '项目开发计划',
-    category: '工作',
-    color: '#67C23A',
-    content: '本周需要完成用户模块的开发，包括登录、注册、个人中心等功能。预计需要5个工作日。',
-    tags: ['待办', '紧急'],
-    createdAt: '2024-03-20 14:20'
-  },
-  {
-    id: 3,
-    title: '周末生活安排',
-    category: '生活',
-    color: '#E6A23C',
-    content: '周六去图书馆看书，周日和朋友聚餐。记得提前预约餐厅，还要准备一个小礼物。',
-    tags: ['周末'],
-    createdAt: '2024-06-01 09:00'
-  },
-  {
-    id: 4,
-    title: '产品创意灵感',
-    category: '想法',
-    color: '#F56C6C',
-    content: '做一个可以记录个人历程的应用，结合时间轴的形式展示，支持添加图片和标签分类。界面要简洁美观，交互要流畅。',
-    tags: ['灵感', '产品'],
-    createdAt: '2024-08-15 16:45'
-  },
-  {
-    id: 5,
-    title: '前端面试准备',
-    category: '学习',
-    color: '#722ED1',
-    content: '需要复习的内容：\n1. JavaScript 基础\n2. Vue/React 框架原理\n3. 前端工程化\n4. 性能优化\n5. 算法和数据结构',
-    tags: ['面试', '重要'],
-    createdAt: '2024-09-01 11:20'
-  }
-])
+const notes = ref([])
+
+// 加载状态
+const loading = ref(false)
 
 // ========== 计算属性 ==========
 
-// 过滤后的笔记列表
-const filteredNotes = computed(() => {
-  return notes.value.filter(note => {
-    const matchCategory = !filterCategory.value || note.category === filterCategory.value
-    const plainContent = getPlainText(note.content)
-    const matchSearch = !searchKeyword.value ||
-      note.title.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      plainContent.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-      note.tags?.some(tag => tag.toLowerCase().includes(searchKeyword.value.toLowerCase()))
-    return matchCategory && matchSearch
-  })
+// 过滤后的笔记列表（直接使用后端返回的数据，前端不再过滤）
+const filteredNotes = computed(() => notes.value)
+
+// ========== 监听筛选条件变化 ==========
+watch([filterCategory, searchKeyword], () => {
+  fetchNotes()
 })
 
 // ========== 生命周期 ==========
@@ -605,12 +558,31 @@ onMounted(() => {
     userInfo.value = JSON.parse(savedUserInfo)
   }
 
-  // 获取存储的笔记数据
-  const savedNotes = localStorage.getItem('notes')
-  if (savedNotes) {
-    notes.value = JSON.parse(savedNotes)
-  }
+  // 从接口获取笔记数据
+  fetchNotes()
 })
+
+// ========== 方法 ==========
+
+// 获取笔记列表
+const fetchNotes = async () => {
+  loading.value = true
+  try {
+    const params = {}
+    if (filterCategory.value) {
+      params.category = filterCategory.value
+    }
+    if (searchKeyword.value) {
+      params.keyword = searchKeyword.value
+    }
+    const res = await getNotesApi(params)
+    notes.value = res.data.list || []
+  } catch (error) {
+    console.error('获取笔记列表失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 onBeforeUnmount(() => {
   // 销毁编辑器实例
@@ -738,7 +710,7 @@ const handleCancel = () => {
 }
 
 // 提交笔记
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!noteForm.title) {
     ElMessage.warning('请填写标题')
     return
@@ -751,39 +723,31 @@ const handleSubmit = () => {
     return
   }
 
-  if (isEdit.value) {
-    // 编辑模式
-    const index = notes.value.findIndex(n => n.id === noteForm.id)
-    if (index !== -1) {
-      notes.value[index] = {
-        ...notes.value[index],
-        title: noteForm.title,
-        category: noteForm.category,
-        color: noteForm.color,
-        content: content,
-        tags: noteForm.tags,
-        updatedAt: new Date().toISOString()
-      }
-    }
-    ElMessage.success('保存成功')
-  } else {
-    // 新建模式
-    const newNote = {
-      id: Date.now(),
+  try {
+    const data = {
       title: noteForm.title,
       category: noteForm.category,
       color: noteForm.color,
       content: content,
-      tags: noteForm.tags,
-      createdAt: new Date().toISOString()
+      tags: noteForm.tags
     }
-    notes.value.unshift(newNote)
-    ElMessage.success('创建成功')
-  }
 
-  // 持久化存储
-  localStorage.setItem('notes', JSON.stringify(notes.value))
-  dialogVisible.value = false
+    if (isEdit.value) {
+      // 编辑模式 - 调用更新接口
+      await updateNoteApi(noteForm.id, data)
+      ElMessage.success('保存成功')
+    } else {
+      // 新建模式 - 调用创建接口
+      await createNoteApi(data)
+      ElMessage.success('创建成功')
+    }
+
+    // 刷新笔记列表
+    await fetchNotes()
+    dialogVisible.value = false
+  } catch (error) {
+    ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
+  }
 }
 
 // 删除笔记
@@ -794,9 +758,14 @@ const handleDelete = async (id) => {
     type: 'warning'
   })
 
-  notes.value = notes.value.filter(note => note.id !== id)
-  localStorage.setItem('notes', JSON.stringify(notes.value))
-  ElMessage.success('删除成功')
+  try {
+    await deleteNoteApi(id)
+    ElMessage.success('删除成功')
+    // 刷新笔记列表
+    await fetchNotes()
+  } catch (error) {
+    ElMessage.error('删除失败')
+  }
 }
 
 // 处理下拉菜单命令
