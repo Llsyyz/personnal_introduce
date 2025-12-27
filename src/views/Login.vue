@@ -24,8 +24,8 @@
         </div>
 
         <!-- 标题 -->
-        <h1 class="login-title">欢迎回来</h1>
-        <p class="login-subtitle">登录 NoteSpace 开启创作之旅</p>
+        <h1 class="login-title">{{ isLogin ? '欢迎回来' : '创建账户' }}</h1>
+        <p class="login-subtitle">{{ isLogin ? '登录 NoteSpace 开启创作之旅' : '注册 NoteSpace 开启创作之旅' }}</p>
 
         <!-- 登录表单 -->
         <el-form
@@ -53,24 +53,40 @@
               :prefix-icon="Lock"
               size="large"
               show-password
-              @keyup.enter="handleLogin"
+              @keyup.enter="isLogin ? handleLogin() : handleRegister()"
             />
           </el-form-item>
 
-          <!-- 记住我 & 忘记密码 -->
+          <!-- 确认密码输入框（仅注册模式） -->
+          <el-form-item v-if="!isLogin" prop="confirmPassword">
+            <el-input
+              v-model="loginForm.confirmPassword"
+              type="password"
+              placeholder="请确认密码"
+              :prefix-icon="Lock"
+              size="large"
+              show-password
+              @keyup.enter="handleRegister"
+            />
+          </el-form-item>
+
+          <!-- 记住我 & 忘记密码 / 切换注册 -->
           <div class="remember-me">
-            <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
-            <a href="#" class="forget-link">忘记密码？</a>
+            <el-checkbox v-if="isLogin" v-model="loginForm.remember">记住我</el-checkbox>
+            <span v-else></span>
+            <a href="#" class="forget-link" @click.prevent="toggleMode">
+              {{ isLogin ? '还没有账号？立即注册' : '已有账号？立即登录' }}
+            </a>
           </div>
 
-          <!-- 登录按钮 -->
+          <!-- 登录/注册按钮 -->
           <el-button
             type="primary"
             class="login-button"
             :loading="loading"
-            @click="handleLogin"
+            @click="isLogin ? handleLogin() : handleRegister()"
           >
-            {{ loading ? '登录中...' : '登录' }}
+            {{ loading ? (isLogin ? '登录中...' : '注册中...') : (isLogin ? '登录' : '注册') }}
           </el-button>
         </el-form>
 
@@ -88,7 +104,7 @@ import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Star } from '@element-plus/icons-vue'
-import { loginApi } from '@/api/login'
+import { loginApi, registerApi } from '@/api/login'
 
 // ========== 路由实例 ==========
 // useRouter 用于获取路由实例，进行页面跳转
@@ -104,11 +120,15 @@ const loginFormRef = ref(null)
 // 登录按钮的加载状态
 const loading = ref(false)
 
+// 是否为登录模式（true: 登录, false: 注册）
+const isLogin = ref(true)
+
 // 登录表单的数据对象
 const loginForm = reactive({
-  username: '',      // 用户名
-  password: '',      // 密码
-  remember: false    // 是否记住我
+  username: '',           // 用户名
+  password: '',           // 密码
+  confirmPassword: '',    // 确认密码（注册用）
+  remember: false         // 是否记住我
 })
 
 // ========== 表单验证规则 ==========
@@ -122,6 +142,20 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+  ],
+  // 确认密码验证规则（仅注册时）
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== loginForm.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ]
 }
 
@@ -172,6 +206,48 @@ const handleLogin = async () => {
   } catch (error) {
     // 6. 登录失败处理
     ElMessage.error(error.message || '登录失败，请重试')
+  } finally {
+    // 7. 无论成功失败，都关闭加载状态
+    loading.value = false
+  }
+}
+
+// ========== 切换登录/注册模式 ==========
+const toggleMode = () => {
+  isLogin.value = !isLogin.value
+  // 清空表单验证错误
+  loginFormRef.value?.clearValidate()
+  // 清空确认密码字段
+  loginForm.confirmPassword = ''
+}
+
+// ========== 注册处理函数 ==========
+const handleRegister = async () => {
+  // 1. 验证表单
+  const valid = await loginFormRef.value.validate().catch(() => false)
+
+  if (!valid) {
+    return
+  }
+
+  // 2. 开始加载状态
+  loading.value = true
+
+  try {
+    // 3. 调用注册接口
+    const response = await registerApi(loginForm.username, loginForm.password)
+
+    // 4. 注册成功处理
+    ElMessage.success(response.message || '注册成功！请登录')
+
+    // 5. 切换到登录模式
+    isLogin.value = true
+    loginForm.confirmPassword = ''
+    loginFormRef.value?.clearValidate()
+
+  } catch (error) {
+    // 6. 注册失败处理
+    ElMessage.error(error.message || '注册失败，请重试')
   } finally {
     // 7. 无论成功失败，都关闭加载状态
     loading.value = false

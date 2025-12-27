@@ -43,3 +43,20 @@ export const logoutApi = () => {
     method: 'post'
   })
 }
+
+/**
+ * 用户注册
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @returns {Promise} 返回注册结果
+ */
+export const registerApi = (username, password) => {
+  return request({
+    url: '/auth/register',
+    method: 'post',
+    data: {
+      username,
+      password
+    }
+  })
+}
