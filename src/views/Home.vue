@@ -72,17 +72,17 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="home">
+                  <el-icon><HomeFilled /></el-icon>
+                  <span>首页</span>
+                </el-dropdown-item>
                 <el-dropdown-item command="notes">
                   <el-icon><Notebook /></el-icon>
-                  <span>我的笔记</span>
+                  <span>笔记</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="profile">
-                  <el-icon><User /></el-icon>
-                  <span>个人中心</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="settings">
-                  <el-icon><Setting /></el-icon>
-                  <span>设置</span>
+                <el-dropdown-item command="gallery">
+                  <el-icon><Collection /></el-icon>
+                  <span>相册</span>
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
@@ -111,11 +111,11 @@
           <div class="hero-actions">
             <el-button size="large" class="hero-btn secondary" @click="scrollToTimeline">
               <el-icon><Compass /></el-icon>
-              查看历程
+              <span>查看历程</span>
             </el-button>
             <el-button size="large" class="hero-btn primary" @click="handleAddExperience">
               <el-icon><Plus /></el-icon>
-              添加经历
+              <span>添加经历</span>
             </el-button>
           </div>
         </div>
@@ -157,9 +157,9 @@
             <el-icon><Collection /></el-icon>
             我的历程
           </h2>
-          <el-button type="primary" @click="handleAddExperience">
+          <el-button class="add-experience-btn" @click="handleAddExperience">
             <el-icon><Plus /></el-icon>
-            添加经历
+            <span>添加经历</span>
           </el-button>
         </div>
 
@@ -209,7 +209,10 @@
           description="还没有记录任何历程"
           :image-size="200"
         >
-          <el-button type="primary" @click="handleAddExperience">添加第一篇历程</el-button>
+          <el-button class="add-experience-btn" @click="handleAddExperience">
+            <el-icon><Plus /></el-icon>
+            <span>添加第一篇历程</span>
+          </el-button>
         </el-empty>
       </section>
     </div>
@@ -326,9 +329,9 @@ import { ref, reactive, onMounted, onUnmounted, computed, shallowRef, nextTick }
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Star, User, ArrowDown, Setting, SwitchButton, Trophy,
+  Star, User, ArrowDown, SwitchButton, Trophy,
   Compass, Plus, SuccessFilled, Clock, Collection,
-  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search, EditPen
+  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search, EditPen, HomeFilled
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 import '@wangeditor/editor/dist/css/style.css'
@@ -524,14 +527,14 @@ const scrollToTimeline = () => {
 // 处理下拉菜单命令
 const handleCommand = (command) => {
   switch (command) {
+    case 'home':
+      router.push('/home')
+      break
     case 'notes':
       router.push('/notes')
       break
-    case 'profile':
-      ElMessage.info('个人中心功能开发中...')
-      break
-    case 'settings':
-      ElMessage.info('设置功能开发中...')
+    case 'gallery':
+      router.push('/gallery')
       break
     case 'logout':
       handleLogout()
@@ -703,16 +706,16 @@ const confirmLogout = async () => {
   75% { transform: translate(-40px, -30px) scale(1.05); }
 }
 
-/* ========== 导航栏 - Apple 风格 ========== */
+/* ========== 导航栏 - 现代简洁风格 ========== */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
 }
 
 .navbar-content {
@@ -836,23 +839,28 @@ const confirmLogout = async () => {
   border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* 确保 tooltip 不会影响按钮间距 */
+.quick-actions :deep(.el-tooltip__trigger) {
+  display: flex;
+}
+
 .action-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f5f5f7;
   border: 1px solid #e5e5ea;
   color: #1d1d1f;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
-  background: #e5e5ea;
+  background: #fff;
   border-color: #d1d1d6;
   color: #0071e3;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* 用户下拉区域 */
@@ -860,23 +868,27 @@ const confirmLogout = async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: 14px;
   background: #f5f5f7;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #e5e5ea;
 }
 
 .user-dropdown:hover {
-  background: #e5e5ea;
+  background: #fff;
   border-color: #d1d1d6;
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .user-avatar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.user-avatar :deep(.el-icon) {
+  font-size: 18px;
 }
 
 .user-name {
@@ -978,20 +990,31 @@ const confirmLogout = async () => {
   font-size: 16px;
   border-radius: 14px;
   font-weight: 600;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-btn .el-icon {
+  font-size: 18px;
 }
 
 .hero-btn.primary {
-  background: #1d1d1f;
+  background: linear-gradient(135deg, #1d1d1f 0%, #000 100%);
   border: none;
   color: #fff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .hero-btn.primary:hover {
-  background: #000;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #2d2d2f 0%, #1a1a1a 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.hero-btn.primary:active {
+  transform: translateY(-1px) scale(1.01);
 }
 
 .hero-btn.secondary {
@@ -1003,8 +1026,12 @@ const confirmLogout = async () => {
 .hero-btn.secondary:hover {
   background: #f5f5f7;
   border-color: #d1d1d6;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.hero-btn.secondary:active {
+  transform: translateY(-1px) scale(1.01);
 }
 
 /* ========== 视觉装饰区域 ========== */
@@ -1044,12 +1071,18 @@ const confirmLogout = async () => {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
+  animation: floatCardCenter 6s ease-in-out infinite;
   animation-delay: 4s;
 }
 
 @keyframes floatCard {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-20px); }
+}
+
+@keyframes floatCardCenter {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-20px); }
 }
 
 .card-label {
@@ -1068,21 +1101,21 @@ const confirmLogout = async () => {
 
 .stat-card {
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 24px;
   padding: 28px;
   display: flex;
   align-items: center;
   gap: 20px;
   animation: fadeInUp 0.8s ease-out backwards;
   animation-delay: var(--delay);
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -1133,6 +1166,36 @@ const confirmLogout = async () => {
   color: #1d1d1f;
   margin: 0;
   letter-spacing: -0.02em;
+}
+
+/* ========== 添加经历按钮 ========== */
+.add-experience-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #1d1d1f 0%, #000 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.add-experience-btn .el-icon {
+  font-size: 16px;
+}
+
+.add-experience-btn:hover {
+  background: linear-gradient(135deg, #2d2d2f 0%, #1a1a1a 100%);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+}
+
+.add-experience-btn:active {
+  transform: translateY(0) scale(1);
 }
 
 /* ========== 时间轴样式 ========== */
@@ -1201,16 +1264,16 @@ const confirmLogout = async () => {
   flex: 1;
   max-width: calc(50% - 40px);
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 24px;
   padding: 28px;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .timeline-content:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: scale(1.03);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 .timeline-date {
@@ -1463,14 +1526,15 @@ const confirmLogout = async () => {
   font-style: normal;
 }
 
-/* ========== 退出登录对话框样式 ========== */
+/* ========== 退出登录对话框样式 - 现代简洁 ========== */
 .logout-dialog :deep(.el-dialog__body) {
   padding: 0;
 }
 
 .logout-dialog :deep(.el-dialog) {
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.15);
 }
 
 .logout-content {
@@ -1511,9 +1575,10 @@ const confirmLogout = async () => {
 .logout-btn {
   flex: 1;
   height: 44px;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
+  transition: all 0.25s ease;
 }
 
 .logout-btn.cancel {
@@ -1524,15 +1589,19 @@ const confirmLogout = async () => {
 
 .logout-btn.cancel:hover {
   background: #e5e5ea;
+  transform: translateY(-1px);
 }
 
 .logout-btn.confirm {
-  background: #f56c6c;
+  background: linear-gradient(135deg, #f56c6c 0%, #e85d5d 100%);
   border: none;
   color: #fff;
+  box-shadow: 0 4px 16px rgba(245, 108, 108, 0.3);
 }
 
 .logout-btn.confirm:hover {
-  background: #e85d5d;
+  background: linear-gradient(135deg, #e85d5d 0%, #d94f4f 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 108, 108, 0.35);
 }
 </style>

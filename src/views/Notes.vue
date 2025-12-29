@@ -20,7 +20,7 @@
           <div class="brand" @click="router.push('/home')">
             <div class="brand-icon">
               <el-icon :size="22">
-                <Notebook />
+                <Star />
               </el-icon>
             </div>
             <span class="brand-name">NoteSpace</span>
@@ -54,13 +54,6 @@
                 <el-icon :size="18"><Collection /></el-icon>
               </el-button>
             </el-tooltip>
-            <el-tooltip content="通知" placement="bottom">
-              <el-badge :value="notificationCount" :hidden="notificationCount === 0" class="badge-item">
-                <el-button class="action-btn">
-                  <el-icon :size="18"><Bell /></el-icon>
-                </el-button>
-              </el-badge>
-            </el-tooltip>
           </div>
 
           <!-- 用户下拉区域 -->
@@ -76,15 +69,15 @@
               <el-dropdown-menu>
                 <el-dropdown-item command="home">
                   <el-icon><HomeFilled /></el-icon>
-                  <span>返回首页</span>
+                  <span>首页</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="profile">
-                  <el-icon><User /></el-icon>
-                  <span>个人中心</span>
+                <el-dropdown-item command="notes">
+                  <el-icon><Notebook /></el-icon>
+                  <span>笔记</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="settings">
-                  <el-icon><Setting /></el-icon>
-                  <span>设置</span>
+                <el-dropdown-item command="gallery">
+                  <el-icon><Collection /></el-icon>
+                  <span>相册</span>
                 </el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
@@ -407,7 +400,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, SwitchButton, HomeFilled, Notebook, Search,
   Plus, Edit, Delete, Calendar, Grid, Reading, Briefcase,
-  Sunny, More, Check, EditPen, Bell, Setting, Close, Collection
+  Sunny, More, Check, EditPen, Close, Collection
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 import { getNotesApi, createNoteApi, updateNoteApi, deleteNoteApi } from '@/api/notes'
@@ -433,9 +426,6 @@ const userInfo = ref({
 
 // 搜索关键词
 const searchKeyword = ref('')
-
-// 通知数量
-const notificationCount = ref(0)
 
 // 分类筛选
 const filterCategory = ref('')
@@ -774,11 +764,11 @@ const handleCommand = (command) => {
     case 'home':
       router.push('/home')
       break
-    case 'profile':
-      ElMessage.info('个人中心功能开发中...')
+    case 'notes':
+      router.push('/notes')
       break
-    case 'settings':
-      ElMessage.info('设置功能开发中...')
+    case 'gallery':
+      router.push('/gallery')
       break
     case 'logout':
       handleLogout()
@@ -877,11 +867,11 @@ const handleLogout = async () => {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
 }
 
 .navbar-content {
@@ -1005,34 +995,28 @@ const handleLogout = async () => {
   border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* 确保 tooltip 不会影响按钮间距 */
+.quick-actions :deep(.el-tooltip__trigger) {
+  display: flex;
+}
+
 .action-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f5f5f7;
   border: 1px solid #e5e5ea;
   color: #1d1d1f;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
-  background: #e5e5ea;
+  background: #fff;
   border-color: #d1d1d6;
   color: #0071e3;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.badge-item {
-  display: flex;
-  align-items: center;
-}
-
-.badge-item :deep(.el-badge__content) {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  border: none;
-  box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 /* 用户下拉区域 */
@@ -1057,6 +1041,10 @@ const handleLogout = async () => {
 
 .user-avatar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.user-avatar :deep(.el-icon) {
+  font-size: 18px;
 }
 
 .user-name {
@@ -1120,17 +1108,25 @@ const handleLogout = async () => {
 }
 
 .add-btn {
-  background: #1d1d1f;
+  background: linear-gradient(135deg, #1d1d1f 0%, #000 100%);
   border: none;
-  height: 40px;
-  padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 42px;
+  padding: 0 28px;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
 }
 
 .add-btn:hover {
-  background: #000;
+  background: linear-gradient(135deg, #2d2d2f 0%, #1a1a1a 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.add-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* ========== 分类标签 ========== */
@@ -1146,27 +1142,30 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 12px 22px;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
   color: #6e6e73;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .category-tab:hover {
   background: #f5f5f7;
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .category-tab.active {
-  background: #1d1d1f;
+  background: linear-gradient(135deg, #1d1d1f 0%, #000 100%);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .category-tab .count {
@@ -1186,14 +1185,14 @@ const handleLogout = async () => {
 
 .note-card {
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 24px;
   padding: 24px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
 }
 
 .note-card::before {
@@ -1204,11 +1203,17 @@ const handleLogout = async () => {
   width: 4px;
   height: 100%;
   background: var(--note-color);
+  transition: width 0.3s ease;
 }
 
 .note-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.note-card:hover::before {
+  width: 5px;
 }
 
 .note-header {
@@ -1376,7 +1381,7 @@ const handleLogout = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  padding: 18px 28px;
   border-bottom: 1px solid #e5e5ea;
   background: #fff;
 }
@@ -1393,6 +1398,18 @@ const handleLogout = async () => {
 .header-right {
   display: flex;
   gap: 12px;
+}
+
+.header-right .el-button {
+  border-radius: 10px;
+  padding: 0 20px;
+  height: 36px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
+
+.header-right .el-button:hover {
+  transform: translateY(-1px);
 }
 
 .note-editor-container {
@@ -1470,10 +1487,10 @@ const handleLogout = async () => {
   flex-direction: column;
   background: #fff;
   margin: 16px 24px 24px;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .editor-toolbar {

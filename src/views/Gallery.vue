@@ -18,37 +18,63 @@
         <div class="nav-left">
           <div class="brand" @click="router.push('/home')">
             <div class="brand-icon">
-              <el-icon><Star /></el-icon>
+              <el-icon :size="22"><Star /></el-icon>
             </div>
             <span class="brand-name">NoteSpace</span>
           </div>
         </div>
 
         <div class="nav-center">
-          <div class="page-title">相册</div>
+          <div class="global-search">
+            <el-icon class="search-icon"><Search /></el-icon>
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索照片..."
+              class="search-input"
+              clearable
+            />
+          </div>
         </div>
 
         <div class="nav-right">
           <div class="quick-actions">
-            <el-button class="action-btn" @click="router.push('/home')">
-              <el-icon><HomeFilled /></el-icon>
-            </el-button>
-            <el-button class="action-btn" @click="router.push('/notes')">
-              <el-icon><Notebook /></el-icon>
-            </el-button>
+            <el-tooltip content="首页" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/home')">
+                <el-icon :size="18"><HomeFilled /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="笔记" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/notes')">
+                <el-icon :size="18"><Notebook /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
 
           <el-dropdown @command="handleCommand" trigger="click">
             <div class="user-dropdown">
-              <el-avatar class="user-avatar" :size="32">{{ userInfo.nickname?.charAt(0) }}</el-avatar>
+              <el-avatar :src="userInfo.avatar" :size="36" class="user-avatar">
+                <el-icon><User /></el-icon>
+              </el-avatar>
               <span class="user-name">{{ userInfo.nickname }}</span>
               <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="logout">
+                <el-dropdown-item command="home">
+                  <el-icon><HomeFilled /></el-icon>
+                  <span>首页</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="notes">
+                  <el-icon><Notebook /></el-icon>
+                  <span>笔记</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="gallery">
+                  <el-icon><Collection /></el-icon>
+                  <span>相册</span>
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
-                  退出登录
+                  <span>退出登录</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -236,8 +262,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-  Star, HomeFilled, Notebook, ArrowDown, SwitchButton,
-  Plus, Collection, Close, ArrowLeft, ArrowRight
+  Star, HomeFilled, Notebook, ArrowDown, SwitchButton, User,
+  Plus, Collection, Close, ArrowLeft, ArrowRight, Search
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 
@@ -254,6 +280,9 @@ const userInfo = ref({
 const photos = ref([])
 const selectedCategory = ref('全部')
 const categories = ref(['生活', '旅行', '风景', '人物', '美食'])
+
+// 搜索关键词
+const searchKeyword = ref('')
 
 // 上传对话框
 const uploadDialogVisible = ref(false)
@@ -395,8 +424,19 @@ const goToPhoto = (index) => {
 
 // 处理下拉菜单命令
 const handleCommand = (command) => {
-  if (command === 'logout') {
-    logout()
+  switch (command) {
+    case 'home':
+      router.push('/home')
+      break
+    case 'notes':
+      router.push('/notes')
+      break
+    case 'gallery':
+      router.push('/gallery')
+      break
+    case 'logout':
+      logout()
+      break
   }
 }
 
@@ -414,6 +454,12 @@ const logout = async () => {
 
 // 初始化
 onMounted(() => {
+  // 获取用户信息
+  const savedUserInfo = localStorage.getItem('userInfo')
+  if (savedUserInfo) {
+    userInfo.value = JSON.parse(savedUserInfo)
+  }
+
   const saved = localStorage.getItem('gallery_photos')
   if (saved) {
     photos.value = JSON.parse(saved)
@@ -516,15 +562,15 @@ onMounted(() => {
   75% { transform: translate(-40px, -30px) scale(1.05); }
 }
 
-/* ========== 导航栏 ========== */
+/* ========== 导航栏 - 现代简洁 ========== */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(30px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
 }
 
 .navbar-content {
@@ -577,16 +623,56 @@ onMounted(() => {
   letter-spacing: -0.01em;
 }
 
+/* 中间搜索区域 */
 .nav-center {
   flex: 1;
-  display: flex;
-  justify-content: center;
+  max-width: 500px;
 }
 
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
+.global-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: #86868b;
+  z-index: 1;
+}
+
+.global-search .search-input {
+  width: 100%;
+}
+
+.global-search :deep(.el-input__wrapper) {
+  background: #f5f5f7;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  padding-left: 42px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
+}
+
+.global-search :deep(.el-input__wrapper:hover),
+.global-search :deep(.el-input__wrapper.is-focus) {
+  background: #fff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+}
+
+.global-search :deep(.el-input__inner) {
   color: #1d1d1f;
+  font-size: 14px;
+}
+
+.global-search :deep(.el-input__inner::placeholder) {
+  color: #86868b;
+}
+
+.global-search :deep(.el-input__clear) {
+  color: #86868b;
 }
 
 .nav-right {
@@ -604,55 +690,75 @@ onMounted(() => {
   border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* 确保 tooltip 不会影响按钮间距 */
+.quick-actions :deep(.el-tooltip__trigger) {
+  display: flex;
+}
+
 .action-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f5f5f7;
   border: 1px solid #e5e5ea;
   color: #1d1d1f;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
-  background: #e5e5ea;
+  background: #fff;
   border-color: #d1d1d6;
   color: #0071e3;
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .user-dropdown {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: 14px;
   background: #f5f5f7;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #e5e5ea;
 }
 
 .user-dropdown:hover {
-  background: #e5e5ea;
+  background: #fff;
   border-color: #d1d1d6;
   transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .user-avatar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+.user-avatar :deep(.el-icon) {
+  font-size: 18px;
+}
+
 .user-name {
   font-size: 14px;
   font-weight: 600;
   color: #1d1d1f;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dropdown-icon {
   color: #86868b;
+  transition: transform 0.3s;
   font-size: 14px;
+}
+
+.user-dropdown:hover .dropdown-icon {
+  transform: rotate(180deg);
 }
 
 /* ========== 主要内容区域 ========== */
@@ -692,20 +798,23 @@ onMounted(() => {
 }
 
 .upload-btn {
-  background: #1d1d1f;
+  background: linear-gradient(135deg, #1d1d1f 0%, #000 100%);
   border: none;
-  height: 40px;
-  padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 42px;
+  padding: 0 28px;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .upload-btn:hover {
-  background: #000;
+  background: linear-gradient(135deg, #2d2d2f 0%, #1a1a1a 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
 
-/* ========== 分类筛选 ========== */
+/* ========== 分类筛选 - 现代简洁 ========== */
 .category-filter {
   display: flex;
   gap: 12px;
@@ -717,13 +826,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 12px 22px;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
   color: #6e6e73;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 14px;
   font-weight: 500;
 }
@@ -731,14 +840,16 @@ onMounted(() => {
 .filter-item:hover {
   background: #f5f5f7;
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .filter-item.active {
-  background: #1d1d1f;
+  background: linear-gradient(135deg, #1d1d1f 0%, #000 100%);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
 .filter-item .count {
@@ -754,21 +865,26 @@ onMounted(() => {
   color: #86868b;
 }
 
-/* ========== 杂志风格网格 ========== */
+/* ========== 杂志风格网格 - 现代简洁 ========== */
 .magazine-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-auto-rows: 200px;
-  gap: 16px;
+  gap: 18px;
 }
 
 .magazine-item {
   position: relative;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.magazine-item:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 /* 杂志风格：不同大小的格子 */
@@ -863,22 +979,27 @@ onMounted(() => {
   color: #86868b;
 }
 
-/* ========== 上传对话框 ========== */
+/* ========== 上传对话框 - 现代简洁 ========== */
+.upload-dialog :deep(.el-dialog) {
+  border-radius: 24px;
+}
+
 .upload-preview {
   width: 100%;
   height: 200px;
   border: 2px dashed #e5e5ea;
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s ease;
+  transition: all 0.3s ease;
 }
 
 .upload-preview:hover {
-  border-color: #1d1d1f;
+  border-color: #0071e3;
+  background: rgba(0, 113, 227, 0.02);
 }
 
 .upload-preview img {
