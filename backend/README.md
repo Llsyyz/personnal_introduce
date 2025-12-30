@@ -27,21 +27,32 @@ notespace-backend/
 │   ├── config/                      # 配置类
 │   │   └── WebMvcConfig.java
 │   ├── controller/                  # 控制器层
-│   │   └── AuthController.java
+│   │   ├── AuthController.java      # 认证接口
+│   │   ├── NoteController.java      # 笔记接口
+│   │   └── ChatController.java      # AI 聊天接口
 │   ├── dto/                         # 数据传输对象
 │   │   ├── LoginRequest.java
 │   │   ├── LoginResponse.java
-│   │   └── RegisterRequest.java
+│   │   ├── RegisterRequest.java
+│   │   └── ChatRequest.java
 │   ├── entity/                      # 实体类
-│   │   └── User.java
+│   │   ├── User.java                # 用户实体
+│   │   ├── Note.java                # 笔记实体
+│   │   ├── Chat.java                 # 对话实体
+│   │   └── ChatMessage.java         # 聊天消息实体
 │   ├── exception/                   # 异常处理
 │   │   └── GlobalExceptionHandler.java
 │   ├── interceptor/                 # 拦截器
 │   │   └── AuthInterceptor.java
 │   ├── repository/                  # 数据访问层
-│   │   └── UserRepository.java
+│   │   ├── UserRepository.java
+│   │   ├── NoteRepository.java
+│   │   ├── ChatRepository.java
+│   │   └── ChatMessageRepository.java
 │   ├── service/                     # 业务逻辑层
-│   │   └── UserService.java
+│   │   ├── UserService.java
+│   │   ├── NoteService.java
+│   │   └── ChatService.java
 │   └── util/                        # 工具类
 │       ├── JwtUtil.java
 │       └── PasswordUtil.java
@@ -58,6 +69,7 @@ notespace-backend/
 - 用户信息获取
 - 退出登录
 - 笔记管理（CRUD + 统计）
+- AI 智能聊天（对话管理）
 
 ### 规划中
 - 历程记录管理
@@ -108,6 +120,24 @@ notespace-backend/
 | category | VARCHAR | 分类（生活/旅行/风景/人物/美食） |
 | url | VARCHAR | 照片 URL |
 | description | TEXT | 描述 |
+| created_at | TIMESTAMP | 创建时间 |
+
+### 对话表 (chat)
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| user_id | BIGINT | 用户 ID |
+| title | VARCHAR | 对话标题 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### 聊天消息表 (chat_message)
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| chat_id | BIGINT | 对话 ID |
+| role | VARCHAR | 角色（user/assistant） |
+| content | TEXT | 消息内容 |
 | created_at | TIMESTAMP | 创建时间 |
 
 ## 快速开始
@@ -296,12 +326,123 @@ Authorization: Bearer {token}
 }
 ```
 
+### AI 聊天接口
+
+#### 发送聊天消息
+```
+POST /api/v1/chat
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "message": "你好，请帮我写一篇学习笔记",
+  "history": [
+    { "role": "user", "content": "之前的消息" },
+    { "role": "assistant", "content": "之前的回复" }
+  ]
+}
+```
+
+响应：
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "reply": "你好！我很乐意帮助你...",
+    "chatId": 12345
+  }
+}
+```
+
+#### 获取对话历史列表
+```
+GET /api/v1/chat/history
+Authorization: Bearer {token}
+```
+
+响应：
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "total": 5,
+    "list": [
+      {
+        "id": 12345,
+        "title": "关于 Vue 3 的讨论",
+        "createdAt": "2024-12-24T10:00:00",
+        "updatedAt": "2024-12-24T15:30:00"
+      }
+    ]
+  }
+}
+```
+
+#### 获取对话详情
+```
+GET /api/v1/chat/{chatId}
+Authorization: Bearer {token}
+```
+
+响应：
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "id": 12345,
+    "title": "关于 Vue 3 的讨论",
+    "messages": [
+      {
+        "id": 1,
+        "role": "user",
+        "content": "Vue 3 有什么新特性？",
+        "createdAt": "2024-12-24T10:00:00"
+      },
+      {
+        "id": 2,
+        "role": "assistant",
+        "content": "Vue 3 引入了 Composition API...",
+        "createdAt": "2024-12-24T10:00:05"
+      }
+    ]
+  }
+}
+```
+
+#### 创建新对话
+```
+POST /api/v1/chat
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "title": "新对话"
+}
+```
+
+#### 删除对话
+```
+DELETE /api/v1/chat/{chatId}
+Authorization: Bearer {token}
+```
+
+#### 清空对话消息
+```
+POST /api/v1/chat/{chatId}/clear
+Authorization: Bearer {token}
+```
+
 ## 开发计划
 
+- [x] AI 智能聊天功能
 - [ ] 完善历程记录功能
 - [ ] 实现照片管理功能
 - [ ] 添加单元测试
 - [ ] 添加文件上传功能
+- [ ] 集成第三方 AI 服务（OpenAI/Claude/通义千问）
 
 ## 许可证
 

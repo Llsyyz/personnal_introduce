@@ -49,6 +49,16 @@
                 <el-icon :size="18"><Plus /></el-icon>
               </el-button>
             </el-tooltip>
+            <el-tooltip content="AI 助手" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/chat')">
+                <el-icon :size="18"><ChatDotRound /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="热点资讯" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/news')">
+                <el-icon :size="18"><Reading /></el-icon>
+              </el-button>
+            </el-tooltip>
             <el-tooltip content="查看笔记" placement="bottom">
               <el-button class="action-btn" @click="router.push('/notes')">
                 <el-icon :size="18"><Notebook /></el-icon>
@@ -75,6 +85,14 @@
                 <el-dropdown-item command="home">
                   <el-icon><HomeFilled /></el-icon>
                   <span>首页</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="chat">
+                  <el-icon><ChatDotRound /></el-icon>
+                  <span>AI 助手</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="news">
+                  <el-icon><Reading /></el-icon>
+                  <span>热点资讯</span>
                 </el-dropdown-item>
                 <el-dropdown-item command="notes">
                   <el-icon><Notebook /></el-icon>
@@ -331,7 +349,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Star, User, ArrowDown, SwitchButton, Trophy,
   Compass, Plus, SuccessFilled, Clock, Collection,
-  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search, EditPen, HomeFilled
+  Calendar, View, Delete, TrendCharts, Medal, Document, Notebook, Search, EditPen, HomeFilled, ChatDotRound, Reading
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 import '@wangeditor/editor/dist/css/style.css'
@@ -529,6 +547,12 @@ const handleCommand = (command) => {
   switch (command) {
     case 'home':
       router.push('/home')
+      break
+    case 'chat':
+      router.push('/chat')
+      break
+    case 'news':
+      router.push('/news')
       break
     case 'notes':
       router.push('/notes')
@@ -752,22 +776,19 @@ const confirmLogout = async () => {
 .brand-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .brand-name {
   font-size: 20px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1d1d1f;
   letter-spacing: -0.01em;
 }
 
@@ -884,7 +905,7 @@ const confirmLogout = async () => {
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
 }
 
 .user-avatar :deep(.el-icon) {

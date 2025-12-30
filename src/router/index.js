@@ -11,6 +11,9 @@ const Login = () => import('@/views/Login.vue')
 const Home = () => import('@/views/Home.vue')
 const Notes = () => import('@/views/Notes.vue')
 const Gallery = () => import('@/views/Gallery.vue')
+const Chat = () => import('@/views/Chat.vue')
+const News = () => import('@/views/News.vue')
+const NewsDetail = () => import('@/views/NewsDetail.vue')
 
 // 定义路由配置
 const routes = [
@@ -51,6 +54,33 @@ const routes = [
     meta: {
       title: '相册',
       requiresAuth: true  // 需要登录才能访问
+    }
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: Chat,
+    meta: {
+      title: 'AI 助手',
+      requiresAuth: true  // 需要登录才能访问
+    }
+  },
+  {
+    path: '/news',
+    name: 'News',
+    component: News,
+    meta: {
+      title: '热点资讯',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/news/:id',
+    name: 'NewsDetail',
+    component: NewsDetail,
+    meta: {
+      title: '资讯详情',
+      requiresAuth: true
     }
   }
 ]
