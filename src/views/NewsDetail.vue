@@ -176,7 +176,7 @@
                   <p class="comment-text">{{ comment.content }}</p>
                   <div class="comment-actions">
                     <span class="comment-action" @click="likeComment(comment.id)">
-                      <el-icon><Heart /></el-icon>
+                      <el-icon><Select /></el-icon>
                       {{ comment.likeCount }}
                     </span>
                     <span class="comment-action">回复</span>
@@ -266,7 +266,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   Star, HomeFilled, ArrowLeft, SwitchButton, User, Search, Reading,
-  Clock, View, Heart, ChatDotRound, Share, Connection, TrendCharts
+  Clock, View, Select, ChatDotRound, Share, Connection, TrendCharts
 } from '@element-plus/icons-vue'
 import {
   ChatLineSquare, Share as ShareIcon, Camera

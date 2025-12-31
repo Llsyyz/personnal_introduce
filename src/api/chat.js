@@ -2,7 +2,7 @@
  * AI 聊天相关的 API 接口
  */
 
-import request from '@/utils/request'
+import { chatService } from '@/utils/request'
 
 /**
  * 发送聊天消息
@@ -11,7 +11,7 @@ import request from '@/utils/request'
  * @returns {Promise} 返回 AI 回复
  */
 export const chatApi = (message, history = []) => {
-  return request({
+  return chatService({
     url: '/chat',
     method: 'post',
     data: {
@@ -26,7 +26,7 @@ export const chatApi = (message, history = []) => {
  * @returns {Promise} 返回对话列表
  */
 export const getChatHistoryApi = () => {
-  return request({
+  return chatService({
     url: '/chat/history',
     method: 'get'
   })
@@ -38,7 +38,7 @@ export const getChatHistoryApi = () => {
  * @returns {Promise} 返回对话详情和消息记录
  */
 export const getChatDetailApi = (chatId) => {
-  return request({
+  return chatService({
     url: `/chat/${chatId}`,
     method: 'get'
   })
@@ -50,7 +50,7 @@ export const getChatDetailApi = (chatId) => {
  * @returns {Promise} 返回新对话信息
  */
 export const createChatApi = (title) => {
-  return request({
+  return chatService({
     url: '/chat',
     method: 'post',
     data: { title }
@@ -63,7 +63,7 @@ export const createChatApi = (title) => {
  * @returns {Promise} 返回删除结果
  */
 export const deleteChatApi = (chatId) => {
-  return request({
+  return chatService({
     url: `/chat/${chatId}`,
     method: 'delete'
   })
@@ -75,7 +75,7 @@ export const deleteChatApi = (chatId) => {
  * @returns {Promise} 返回清空结果
  */
 export const clearChatApi = (chatId) => {
-  return request({
+  return chatService({
     url: `/chat/${chatId}/clear`,
     method: 'post'
   })
