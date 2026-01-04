@@ -93,38 +93,23 @@ const router = createRouter({
 })
 
 /**
- * 检查登录状态是否有效
+ * 检查登录状态是否有效（双 Token 机制）
  * @returns {boolean} 登录状态是否有效
  */
 const isAuthenticated = () => {
   try {
-    const token = localStorage.getItem('token')
+    const accessToken = localStorage.getItem('accessToken')
+    const refreshToken = localStorage.getItem('refreshToken')
 
     // 没有 token
-    if (!token) {
+    if (!accessToken || !refreshToken) {
       return false
     }
 
-    // 检查登录时间（可选：添加过期机制）
-    const loginTime = localStorage.getItem('loginTime')
-    if (loginTime) {
-      const now = Date.now()
-      const diff = now - parseInt(loginTime)
-      // 7 天过期（单位：毫秒）
-      const EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000
-
-      if (diff > EXPIRY_TIME) {
-        // 登录过期，清除数据
-        localStorage.removeItem('token')
-        localStorage.removeItem('loginTime')
-        localStorage.removeItem('userInfo')
-        return false
-      }
-    }
-
+    // 双 Token 机制由服务端处理过期，前端只检查存在性
+    // Token 过期时，axios 拦截器会自动刷新或跳转登录
     return true
   } catch (error) {
-    // localStorage 访问出错
     console.error('检查登录状态出错:', error)
     return false
   }

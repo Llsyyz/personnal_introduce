@@ -452,7 +452,8 @@ const handleSearchTopic = (topic) => {
 // 处理下拉菜单
 const handleCommand = (command) => {
   if (command === 'logout') {
-    localStorage.removeItem('token')
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('userInfo')
     ElMessage.success('退出成功')
     router.push('/login')

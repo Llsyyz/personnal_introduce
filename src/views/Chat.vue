@@ -673,7 +673,8 @@ const handleCommand = (command) => {
     router.push('/home')
   } else if (command === 'logout') {
     logoutApi().then(() => {
-      localStorage.removeItem('token')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('userInfo')
       ElMessage.success('退出成功')
       router.push('/login')

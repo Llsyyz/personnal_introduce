@@ -810,7 +810,8 @@ const handleLogout = async () => {
 
   try {
     await logoutApi()
-    localStorage.removeItem('token')
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('userInfo')
     ElMessage.success('已退出登录')
     setTimeout(() => router.push('/login'), 500)

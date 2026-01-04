@@ -182,11 +182,9 @@ const rules = {
 // ========== 登录处理函数 ==========
 const handleLogin = async () => {
   // 1. 验证表单
-  // validate 是 Element Plus 提供的表单验证方法
   const valid = await loginFormRef.value.validate().catch(() => false)
 
   if (!valid) {
-    // 表单验证不通过，直接返回
     return
   }
 
@@ -200,11 +198,9 @@ const handleLogin = async () => {
     // 4. 登录成功处理
     ElMessage.success(response.message)
 
-    // 存储 token 到 localStorage
-    localStorage.setItem('token', response.data.token)
-
-    // 存储登录时间（用于过期检查）
-    localStorage.setItem('loginTime', Date.now().toString())
+    // 存储 accessToken 和 refreshToken 到 localStorage
+    localStorage.setItem('accessToken', response.data.accessToken)
+    localStorage.setItem('refreshToken', response.data.refreshToken)
 
     // 存储用户信息
     localStorage.setItem('userInfo', JSON.stringify(response.data.userInfo))
@@ -218,7 +214,6 @@ const handleLogin = async () => {
 
     // 5. 跳转到首页或重定向页面
     setTimeout(() => {
-      // 检查是否有重定向目标
       const redirect = route.query.redirect || '/home'
       router.push(redirect)
     }, 500)

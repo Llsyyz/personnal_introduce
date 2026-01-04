@@ -457,7 +457,8 @@ const handleCommand = (command) => {
       router.push('/gallery')
       break
     case 'logout':
-      localStorage.removeItem('token')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('userInfo')
       ElMessage.success('退出成功')
       router.push('/login')
