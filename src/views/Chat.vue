@@ -10,7 +10,6 @@
     <ChatSidebar
       v-model="activeTab"
       :user-info="userInfo"
-      @unlock="handleUnlock"
       @logout="handleCommand('logout')"
     />
 
@@ -634,10 +633,6 @@ const loadDailyFortune = () => {
   fortuneTypes.value.forEach(item => {
     item.score = randomScore - Math.floor(Math.random() * 10)
   })
-}
-
-const handleUnlock = () => {
-  ElMessage.info('请联系管理员解锁全部功能')
 }
 
 const handleCommand = (command) => {
