@@ -6,14 +6,117 @@
 
 <template>
   <div class="chat-page">
-    <!-- 左侧边栏 -->
-    <ChatSidebar
-      v-model="activeTab"
-      :user-info="userInfo"
-      @logout="handleCommand('logout')"
-    />
+    <!-- 顶部导航栏 -->
+    <div class="navbar">
+      <div class="navbar-content">
+        <!-- 左侧品牌区域 -->
+        <div class="nav-left">
+          <div class="brand">
+            <div class="brand-icon">
+              <el-icon :size="22">
+                <Star />
+              </el-icon>
+            </div>
+            <span class="brand-name">NoteSpace</span>
+          </div>
+        </div>
 
-    <!-- 右侧内容区 -->
+        <!-- 中间搜索区域 -->
+        <div class="nav-center">
+          <div class="global-search">
+            <el-icon class="search-icon"><Search /></el-icon>
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索..."
+              class="search-input"
+              clearable
+            />
+          </div>
+        </div>
+
+        <!-- 右侧操作区域 -->
+        <div class="nav-right">
+          <!-- 快速操作按钮组 -->
+          <div class="quick-actions">
+            <el-tooltip content="首页" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/home')">
+                <el-icon :size="18"><HomeFilled /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="AI 助手" placement="bottom">
+              <el-button class="action-btn active" @click="router.push('/chat')">
+                <el-icon :size="18"><ChatDotRound /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="热点资讯" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/news')">
+                <el-icon :size="18"><Reading /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="查看笔记" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/notes')">
+                <el-icon :size="18"><Notebook /></el-icon>
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="相册" placement="bottom">
+              <el-button class="action-btn" @click="router.push('/gallery')">
+                <el-icon :size="18"><Collection /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+
+          <!-- 用户下拉区域 -->
+          <el-dropdown @command="handleCommand" trigger="click">
+            <div class="user-dropdown">
+              <el-avatar :src="userInfo.avatar" :size="36" class="user-avatar">
+                <el-icon><User /></el-icon>
+              </el-avatar>
+              <span class="user-name">{{ userInfo.nickname }}</span>
+              <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="home">
+                  <el-icon><HomeFilled /></el-icon>
+                  <span>首页</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="chat">
+                  <el-icon><ChatDotRound /></el-icon>
+                  <span>AI 助手</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="news">
+                  <el-icon><Reading /></el-icon>
+                  <span>热点资讯</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="notes">
+                  <el-icon><Notebook /></el-icon>
+                  <span>笔记</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="gallery">
+                  <el-icon><Collection /></el-icon>
+                  <span>相册</span>
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  <el-icon><SwitchButton /></el-icon>
+                  <span>退出登录</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-wrapper">
+      <!-- 左侧边栏 -->
+      <ChatSidebar
+        v-model="activeTab"
+        :user-info="userInfo"
+        @logout="handleCommand('logout')"
+      />
+
+      <!-- 右侧内容区 -->
     <div class="main-content">
       <!-- 八字计算页面 -->
       <div v-if="activeTab === 'calculate'" class="content-calculate">
@@ -425,6 +528,7 @@
         </Transition>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -434,7 +538,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   Calendar, Sunny, Star, ArrowLeft, ArrowRight,
-  TrendCharts, Coin, Briefcase, Reading, Search
+  TrendCharts, Coin, Briefcase, Reading, Search,
+  HomeFilled, ChatDotRound, Collection, User, ArrowDown, SwitchButton
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
@@ -443,6 +548,9 @@ import TarotCard from '@/components/chat/TarotCard.vue'
 import TarotForm from '@/components/chat/TarotForm.vue'
 
 const router = useRouter()
+
+// 搜索关键词
+const searchKeyword = ref('')
 
 // 状态管理
 const userInfo = ref({
@@ -644,6 +752,16 @@ const handleCommand = (command) => {
       ElMessage.success('退出成功')
       router.push('/login')
     })
+  } else if (command === 'home') {
+    router.push('/home')
+  } else if (command === 'chat') {
+    router.push('/chat')
+  } else if (command === 'news') {
+    router.push('/news')
+  } else if (command === 'notes') {
+    router.push('/notes')
+  } else if (command === 'gallery') {
+    router.push('/gallery')
   }
 }
 
@@ -657,9 +775,188 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ========== 导航栏 ========== */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.brand:hover {
+  transform: scale(1.02);
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.nav-center {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 32px;
+}
+
+.global-search {
+  display: flex;
+  align-items: center;
+  background: #f5f5f7;
+  border-radius: 12px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+}
+
+.global-search:hover {
+  background: #f0f0f2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.global-search .search-icon {
+  color: #999;
+  margin-right: 8px;
+}
+
+.global-search :deep(.el-input__wrapper) {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.global-search :deep(.el-input__inner) {
+  color: #333;
+  font-size: 14px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #666;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: #f5f5f7;
+  color: #333;
+  transform: scale(1.05);
+}
+
+.action-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.user-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.user-dropdown:hover {
+  background: #f5f5f7;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-icon {
+  font-size: 14px;
+  color: #999;
+  transition: transform 0.3s ease;
+}
+
+.user-dropdown:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+/* ========== 主内容包装器 ========== */
+.main-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
 /* ========== 页面基础 ========== */
 .chat-page {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: #fff;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
@@ -1413,6 +1710,25 @@ onMounted(() => {
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
+  .navbar-content {
+    padding: 10px 16px;
+  }
+
+  .nav-center {
+    display: none;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .quick-actions .action-btn:nth-child(1),
+  .quick-actions .action-btn:nth-child(3),
+  .quick-actions .action-btn:nth-child(4),
+  .quick-actions .action-btn:nth-child(5) {
+    display: none;
+  }
+
   .dual-form {
     grid-template-columns: 1fr;
   }
