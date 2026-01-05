@@ -463,7 +463,7 @@
                 v-for="(item, index) in fortuneTypes"
                 :key="index"
                 :name="item.name"
-                :icon="item.icon"
+                :icon="fortuneIcons[item.name]"
                 :score="item.score"
                 :desc="item.desc"
               />
@@ -542,6 +542,7 @@ import {
   HomeFilled, ChatDotRound, Collection, User, ArrowDown, SwitchButton
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
+import { baziCalculateApi, baziMarriageApi, fortuneDailyApi, tarotDrawApi } from '@/api/bazi'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
 import FortuneCard from '@/components/chat/FortuneCard.vue'
 import TarotCard from '@/components/chat/TarotCard.vue'
@@ -616,13 +617,23 @@ const dailyFortune = ref({
 })
 
 const fortuneTypes = ref([
-  { name: '综合运势', icon: TrendCharts, score: 85, desc: '今日运势整体不错' },
-  { name: '事业运势', icon: Briefcase, score: 78, desc: '工作进展顺利' },
-  { name: '财运运势', icon: Coin, score: 82, desc: '财运平稳' },
-  { name: '爱情运势', icon: Star, score: 90, desc: '感情生活甜蜜' },
-  { name: '健康运势', icon: Sunny, score: 75, desc: '注意休息' },
-  { name: '学业运势', icon: Reading, score: 80, desc: '学习效率高' }
+  { name: '综合运势', score: 85, desc: '今日运势整体不错，适合开展新计划' },
+  { name: '事业运势', score: 78, desc: '工作进展顺利，有机会获得领导认可' },
+  { name: '财运运势', score: 82, desc: '财运平稳，不宜进行大额投资' },
+  { name: '爱情运势', score: 90, desc: '感情生活甜蜜，适合约会表白' },
+  { name: '健康运势', score: 75, desc: '注意休息，避免过度劳累' },
+  { name: '学业运势', score: 80, desc: '学习效率高，适合备考进修' }
 ])
+
+// 图标映射
+const fortuneIcons = {
+  '综合运势': TrendCharts,
+  '事业运势': Briefcase,
+  '财运运势': Coin,
+  '爱情运势': Star,
+  '健康运势': Sunny,
+  '学业运势': Reading
+}
 
 // 塔罗牌
 const tarotQuestion = ref('')
@@ -638,54 +649,102 @@ const marriageResult = ref(null)
 const tarotResult = ref(null)
 
 // 处理八字计算
-const handleCalculate = () => {
-  if (!calculateForm.name || !calculateForm.birthDate) {
-    ElMessage.warning('请填写完整信息')
+const handleCalculate = async () => {
+  // 验证必填字段
+  if (!calculateForm.name) {
+    ElMessage.warning('请输入姓名')
+    return
+  }
+  if (calculateForm.inputType === 'date' && !calculateForm.birthDate) {
+    ElMessage.warning('请选择出生日期')
+    return
+  }
+  if (!calculateForm.birthPlace) {
+    ElMessage.warning('请输入出生地点')
+    return
+  }
+  if (calculateForm.knowBirthTime && (calculateForm.birthHour === undefined || calculateForm.birthMinute === undefined)) {
+    ElMessage.warning('请选择完整的出生时间')
     return
   }
 
   calculating.value = true
 
-  setTimeout(() => {
-    baziResult.value = {
-      pillars: [
-        { name: '年柱', heavenly: '甲', earthly: '辰' },
-        { name: '月柱', heavenly: '丁', earthly: '卯' },
-        { name: '日柱', heavenly: '壬', earthly: '申' },
-        { name: '时柱', heavenly: '乙', earthly: '巳' }
-      ]
+  try {
+    const response = await baziCalculateApi(calculateForm)
+    baziResult.value = response.data
+    // 保存八字信息用于每日运势
+    baziInfo.value = {
+      name: calculateForm.name,
+      id: response.data.id || Date.now().toString()
     }
-    baziInfo.value = { name: calculateForm.name }
+    ElMessage.success(response.message || '计算成功')
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '计算失败，请重试')
+  } finally {
     calculating.value = false
-    ElMessage.success('计算成功')
-  }, 1500)
+  }
 }
 
 // 处理八字合婚
-const handleMarriage = () => {
-  if (!marriageForm.male.name || !marriageForm.male.birthDate ||
-      !marriageForm.female.name || !marriageForm.female.birthDate) {
-    ElMessage.warning('请填写完整信息')
+const handleMarriage = async () => {
+  // 验证必填字段
+  if (!marriageForm.male.name || !marriageForm.male.birthDate || !marriageForm.male.birthPlace) {
+    ElMessage.warning('请填写完整的男方信息')
+    return
+  }
+  if (!marriageForm.female.name || !marriageForm.female.birthDate || !marriageForm.female.birthPlace) {
+    ElMessage.warning('请填写完整的女方信息')
+    return
+  }
+  if (marriageForm.male.knowTime && (marriageForm.male.hour === undefined || marriageForm.male.minute === undefined)) {
+    ElMessage.warning('请选择完整的男方出生时间')
+    return
+  }
+  if (marriageForm.female.knowTime && (marriageForm.female.hour === undefined || marriageForm.female.minute === undefined)) {
+    ElMessage.warning('请选择完整的女方出生时间')
     return
   }
 
   marrying.value = true
 
-  setTimeout(() => {
-    const score = Math.floor(Math.random() * 30) + 70
-    marriageResult.value = {
-      score,
-      analysis: score >= 80
-        ? '你们八字匹配度很高，性格互补，相处融洽，是天作之合。'
-        : '你们八字有一定匹配度，需要互相包容理解，用心经营感情。'
+  try {
+    const requestData = {
+      male: {
+        name: marriageForm.male.name,
+        gender: marriageForm.male.gender,
+        calendarType: marriageForm.male.calendarType,
+        birthDate: marriageForm.male.birthDate,
+        knowTime: marriageForm.male.knowTime,
+        hour: marriageForm.male.hour,
+        minute: marriageForm.male.minute,
+        birthPlace: marriageForm.male.birthPlace,
+        ziHour: marriageForm.male.ziHour
+      },
+      female: {
+        name: marriageForm.female.name,
+        gender: marriageForm.female.gender,
+        calendarType: marriageForm.female.calendarType,
+        birthDate: marriageForm.female.birthDate,
+        knowTime: marriageForm.female.knowTime,
+        hour: marriageForm.female.hour,
+        minute: marriageForm.female.minute,
+        birthPlace: marriageForm.female.birthPlace,
+        ziHour: marriageForm.female.ziHour
+      }
     }
+    const response = await baziMarriageApi(requestData)
+    marriageResult.value = response.data
+    ElMessage.success(response.message || '合婚完成')
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '合婚失败，请重试')
+  } finally {
     marrying.value = false
-    ElMessage.success('合婚完成')
-  }, 1500)
+  }
 }
 
 // 处理塔罗牌抽取
-const handleDrawTarot = () => {
+const handleDrawTarot = async () => {
   if (!tarotQuestion.value.trim()) {
     ElMessage.warning('请输入您的问题')
     return
@@ -693,17 +752,13 @@ const handleDrawTarot = () => {
 
   drawing.value = true
 
-  setTimeout(() => {
-    tarotResult.value = {
-      cards: [
-        { emoji: '🃏', name: '愚者', position: '过去', meaning: '新的开始，冒险精神' },
-        { emoji: '⭐', name: '星星', position: '现在', meaning: '希望与启示' },
-        { emoji: '🌞', name: '太阳', position: '未来', meaning: '成功与喜悦' }
-      ],
-      interpretation: '根据塔罗牌的指引，您的问题有着积极的发展趋势。过去的经历为您积累了宝贵的经验，现在的您正处于充满希望的阶段，未来将会迎来成功和喜悦。建议您保持乐观的心态，勇敢面对挑战。'
-    }
-    drawing.value = false
-    ElMessage.success('塔罗牌抽取完成')
+  try {
+    const response = await tarotDrawApi({
+      question: tarotQuestion.value,
+      spread: 'three_card'
+    })
+    tarotResult.value = response.data
+    ElMessage.success(response.message || '塔罗牌抽取完成')
 
     // 触发翻转动画
     nextTick(() => {
@@ -713,7 +768,11 @@ const handleDrawTarot = () => {
         }, index * 300)
       })
     })
-  }, 1500)
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '抽取失败，请重试')
+  } finally {
+    drawing.value = false
+  }
 }
 
 // 日期切换
@@ -734,13 +793,51 @@ const formatDate = (dateStr) => {
 }
 
 // 加载每日运势
-const loadDailyFortune = () => {
-  const scores = [75, 78, 82, 85, 88, 90]
-  const randomScore = scores[Math.floor(Math.random() * scores.length)]
-  dailyFortune.value.totalScore = randomScore
-  fortuneTypes.value.forEach(item => {
-    item.score = randomScore - Math.floor(Math.random() * 10)
-  })
+const loadDailyFortune = async () => {
+  if (!baziInfo.value?.id) {
+    return
+  }
+
+  try {
+    const response = await fortuneDailyApi({
+      baziId: baziInfo.value.id,
+      date: selectedDate.value
+    })
+
+    // 更新运势数据
+    dailyFortune.value.totalScore = response.data.totalScore || 85
+
+    // 更新各项运势
+    if (response.data.fortuneTypes && Array.isArray(response.data.fortuneTypes)) {
+      fortuneTypes.value = response.data.fortuneTypes.map(item => ({
+        name: item.name,
+        icon: getFortuneIcon(item.name),
+        score: item.score,
+        desc: item.desc
+      }))
+    }
+
+    // 更新幸运信息
+    if (response.data.lucky) {
+      dailyFortune.value.luckyColor = response.data.lucky.color || '红色'
+      dailyFortune.value.luckyNumber = response.data.lucky.number || '8'
+      dailyFortune.value.luckyDirection = response.data.lucky.direction || '东南'
+    }
+  } catch (error) {
+    console.error('加载运势失败:', error)
+    // 失败时使用默认数据
+    const scores = [75, 78, 82, 85, 88, 90]
+    const randomScore = scores[Math.floor(Math.random() * scores.length)]
+    dailyFortune.value.totalScore = randomScore
+    fortuneTypes.value.forEach(item => {
+      item.score = randomScore - Math.floor(Math.random() * 10)
+    })
+  }
+}
+
+// 根据运势名称获取对应图标
+const getFortuneIcon = (name) => {
+  return fortuneIcons[name] || TrendCharts
 }
 
 const handleCommand = (command) => {

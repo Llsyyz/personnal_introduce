@@ -148,15 +148,17 @@ Remember to import styles: `import '@wangeditor/editor/dist/css/style.css'`
 
 ## Backend API Documentation
 
-Detailed backend API documentation is available in the `backend/` directory:
-- **`backend/login_api.md`** - Authentication API documentation (login, register, token refresh)
+Detailed backend API documentation is available in the `header/` directory:
+- **`header/login_api.md`** - Authentication API documentation (login, register, token refresh)
   - Dual-token mechanism explanation
   - All auth endpoints with request/response examples
   - Error codes and handling
-- **`backend/chat_api.md`** - Chat API documentation (LangGraph Agent-based)
-  - Chat message endpoints
-  - Conversation history management
-  - Agent capabilities (calculator, weather, time)
+
+- **`header/chat_api.md`** - Fortune Telling API documentation (命理大师)
+  - Bazi (八字) calculation and marriage compatibility
+  - Daily fortune calculation
+  - Tarot card reading (塔罗牌占卜)
+  - All endpoints use Bearer token authentication
 
 ## Important Notes
 
