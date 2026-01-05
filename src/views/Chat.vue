@@ -243,21 +243,13 @@
           </el-button>
         </div>
 
-        <!-- 计算结果 -->
-        <Transition name="result-fade">
-          <div v-if="baziResult" class="result-section">
-            <h3 class="result-title">八字命盘</h3>
-            <div class="pillar-grid">
-              <div v-for="(pillar, index) in baziResult.pillars" :key="index" class="pillar-card">
-                <div class="pillar-name">{{ pillar.name }}</div>
-                <div class="pillar-content">
-                  <div class="pillar-char">{{ pillar.heavenly }}</div>
-                  <div class="pillar-char">{{ pillar.earthly }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Transition>
+        <!-- 流式计算结果 -->
+        <StreamingResult
+          v-if="calculating || baziResult"
+          type="bazi"
+          :data="baziResult"
+          :is-calculating="calculating"
+        />
       </div>
 
       <!-- 八字合婚页面 -->
@@ -409,19 +401,13 @@
           </el-button>
         </div>
 
-        <!-- 合婚结果 -->
-        <Transition name="result-fade">
-          <div v-if="marriageResult" class="marriage-result">
-            <h3 class="result-title">合婚结果</h3>
-            <div class="marriage-score">
-              <span class="score-label">综合匹配度</span>
-              <span class="score-value">{{ marriageResult.score }}%</span>
-            </div>
-            <div class="marriage-analysis">
-              <p>{{ marriageResult.analysis }}</p>
-            </div>
-          </div>
-        </Transition>
+        <!-- 流式合婚结果 -->
+        <StreamingResult
+          v-if="marrying || marriageResult"
+          type="marriage"
+          :data="marriageResult"
+          :is-calculating="marrying"
+        />
       </div>
 
       <!-- 每日运势页面 -->
@@ -507,25 +493,13 @@
           @draw="handleDrawTarot"
         />
 
-        <!-- 塔罗牌结果 -->
-        <Transition name="result-fade">
-          <div v-if="tarotResult" class="tarot-result">
-            <h3 class="result-title">塔罗解读</h3>
-            <div class="tarot-cards">
-              <TarotCard
-                v-for="(card, index) in tarotResult.cards"
-                :key="index"
-                :card="card"
-                :auto-flip="true"
-                :ref="el => { if (el) tarotCardRefs[index] = el }"
-              />
-            </div>
-            <div class="tarot-interpretation">
-              <h4>综合解读</h4>
-              <p>{{ tarotResult.interpretation }}</p>
-            </div>
-          </div>
-        </Transition>
+        <!-- 流式塔罗结果 -->
+        <StreamingResult
+          v-if="drawing || tarotResult"
+          type="tarot"
+          :data="tarotResult"
+          :is-calculating="drawing"
+        />
       </div>
     </div>
     </div>
@@ -533,7 +507,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -545,8 +519,8 @@ import { logoutApi } from '@/api/login'
 import { baziCalculateApi, baziMarriageApi, fortuneDailyApi, tarotDrawApi } from '@/api/bazi'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
 import FortuneCard from '@/components/chat/FortuneCard.vue'
-import TarotCard from '@/components/chat/TarotCard.vue'
 import TarotForm from '@/components/chat/TarotForm.vue'
+import StreamingResult from '@/components/chat/StreamingResult.vue'
 
 const router = useRouter()
 
@@ -564,7 +538,6 @@ const activeTab = ref('calculate')
 const calculating = ref(false)
 const marrying = ref(false)
 const drawing = ref(false)
-const tarotCardRefs = ref([])
 
 // 八字计算表单
 const calculateForm = reactive({
@@ -759,15 +732,6 @@ const handleDrawTarot = async () => {
     })
     tarotResult.value = response.data
     ElMessage.success(response.message || '塔罗牌抽取完成')
-
-    // 触发翻转动画
-    nextTick(() => {
-      tarotCardRefs.value.forEach((cardRef, index) => {
-        setTimeout(() => {
-          cardRef?.flip()
-        }, index * 300)
-      })
-    })
   } catch (error) {
     ElMessage.error(error.response?.data?.message || '抽取失败，请重试')
   } finally {
