@@ -1,243 +1,279 @@
 <!--
-  StreamingResult.vue - 流式输出结果组件
-  用于八字计算、合婚、运势等功能的流式展示
+  StreamingResult.vue - 古风流式输出组件
+  包含传统阴阳鱼动画和实时流式内容块
 -->
 
 <template>
   <div class="streaming-result">
-    <!-- 计算中状态 -->
-    <Transition name="fade">
+    <!-- 计算中状态 - 传统阴阳鱼动画 -->
+    <Transition name="ancient-fade">
       <div v-if="isCalculating" class="calculating-state">
-        <div class="calculation-animation">
-          <div class="calc-ring"></div>
-          <div class="calc-ring"></div>
-          <div class="calc-ring"></div>
+        <div class="yinyang-fish-wrapper">
+          <svg class="yinyang-fish-svg" viewBox="0 0 100 100">
+            <g class="yinyang-group">
+              <!-- 白色背景圆 -->
+              <circle cx="50" cy="50" r="48" fill="white"/>
+              <!-- 黑色S形区域 -->
+              <path d="M 50 2
+                       A 48 48 0 0 1 50 98
+                       A 24 24 0 0 1 50 50
+                       A 24 24 0 0 0 50 2"
+                    fill="black"/>
+              <!-- 阳中的黑点 -->
+              <circle cx="50" cy="26" r="6" fill="black"/>
+              <!-- 阴中的白点 -->
+              <circle cx="50" cy="74" r="6" fill="white"/>
+            </g>
+          </svg>
         </div>
-        <div class="calculation-text">
-          <p class="main-text">{{ currentStep }}</p>
-          <p class="sub-text">{{ progressText }}</p>
-        </div>
+        <div class="calculating-text">{{ thinkingText }}</div>
       </div>
     </Transition>
 
-    <!-- 流式输出结果 -->
-    <Transition name="result-slide">
-      <div v-if="showResult && !isCalculating" class="result-container">
-        <!-- 八字计算结果 -->
-        <div v-if="type === 'bazi'" class="bazi-result">
-          <h3 class="result-title">八字命盘</h3>
-          <div class="pillar-grid">
-            <div
-              v-for="(pillar, index) in displayPillars"
-              :key="index"
-              class="pillar-card"
-              :class="{ 'pillar-show': pillar.show }"
-            >
-              <div class="pillar-name">{{ pillar.name }}</div>
-              <div class="pillar-content">
-                <div class="pillar-char">{{ pillar.heavenly }}</div>
-                <div class="pillar-char">{{ pillar.earthly }}</div>
-              </div>
-            </div>
+    <!-- 实时流式内容块 -->
+    <Transition name="slide-in">
+      <div v-if="(isCalculating && streamingContent) || (displayData && Object.keys(displayData).length)" class="flowing-container">
+        <!-- 流式原始内容 -->
+        <div v-if="isCalculating && streamingContent" class="streaming-block">
+          <div class="streaming-header">
+            <span class="streaming-icon">✧</span>
+            <span class="streaming-title">实时生成中...</span>
+            <span class="streaming-dot">●</span>
           </div>
+          <div class="streaming-body">
+            <pre class="streaming-content-text">{{ streamingContent }}</pre>
+          </div>
+        </div>
 
-          <!-- 五行分析 -->
-          <Transition name="fade-up">
-            <div v-if="wuxingData" class="wuxing-analysis">
-              <h4 class="section-subtitle">五行分析</h4>
-              <div class="wuxing-info">
-                <span class="wuxing-label">日主:</span>
-                <span class="wuxing-value">{{ wuxingData.dayMaster }}</span>
-                <span class="wuxing-label">身强:</span>
-                <span class="wuxing-value">{{ wuxingData.strength }}</span>
+        <!-- 结构化结果展示 -->
+        <div v-if="displayData && Object.keys(displayData).length && !isCalculating" class="result-flow">
+          <!-- 八字计算流式展示 -->
+          <template v-if="type === 'bazi'">
+            <!-- 八字命盘 -->
+            <template v-if="displayData.pillars && displayData.pillars.length">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">命</span>
+                  <h3>八字命盘</h3>
+                  <span class="title-seal">盘</span>
+                </div>
+                <div class="pillars-scroll">
+                  <div class="pillar-row">
+                    <div
+                      v-for="(pillar, index) in displayData.pillars"
+                      :key="index"
+                      class="pillar-box"
+                    >
+                      <div class="pillar-name">{{ pillar.name }}</div>
+                      <div class="pillar-pillar">
+                        <span class="heavenly">{{ pillar.heavenly }}</span>
+                        <span class="earthly">{{ pillar.earthly }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </Transition>
+            </template>
 
-          <!-- 十神分析 -->
-          <Transition name="fade-up">
-            <div v-if="shishenData && shishenData.length" class="shishen-analysis">
-              <h4 class="section-subtitle">十神分析</h4>
-              <div class="shishen-grid">
-                <div
-                  v-for="(item, index) in displayShishen"
-                  :key="index"
-                  class="shishen-item"
-                  :class="{ 'shishen-show': item.show }"
-                >
-                  <span class="shishen-name">{{ item.name }}</span>
-                  <span class="shishen-strength" :class="getStrengthClass(item.strength)">
-                    {{ item.strength }}
+            <!-- 五行分析 -->
+            <template v-if="displayData.wuxing">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">五</span>
+                  <h3>五行分析</h3>
+                  <span class="title-seal">行</span>
+                </div>
+                <div class="wuxing-text">
+                  <span class="wuxing-label">日主：</span>
+                  <span class="wuxing-value">{{ displayData.wuxing.dayMaster }}</span>
+                  <span class="wuxing-divider">·</span>
+                  <span class="wuxing-label">身强：</span>
+                  <span class="wuxing-value">{{ displayData.wuxing.strength }}</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- 十神分析 -->
+            <template v-if="displayData.shishen && displayData.shishen.length">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">十</span>
+                  <h3>十神分析</h3>
+                  <span class="title-seal">神</span>
+                </div>
+                <div class="shishen-flow">
+                  <span
+                    v-for="(item, index) in displayData.shishen"
+                    :key="index"
+                    class="shishen-item"
+                  >
+                    {{ item.name }}
+                    <span class="strength-mark">{{ item.strength }}</span>
                   </span>
                 </div>
               </div>
-            </div>
-          </Transition>
-        </div>
+            </template>
+          </template>
 
-        <!-- 合婚结果 -->
-        <div v-else-if="type === 'marriage'" class="marriage-result">
-          <h3 class="result-title">合婚结果</h3>
+          <!-- 合婚流式展示 -->
+          <template v-else-if="type === 'marriage'">
+            <template v-if="displayData.score !== undefined">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">合</span>
+                  <h3>婚姻匹配</h3>
+                  <span class="title-seal">婚</span>
+                </div>
+                <div class="marriage-score-display">
+                  <div class="score-circle-ancient">
+                    <div class="score-number">{{ displayData.score }}</div>
+                    <div class="score-label">分</div>
+                  </div>
+                  <div v-if="displayData.level" class="level-text" :class="getLevelClass(displayData.level)">
+                    {{ displayData.level }}
+                  </div>
+                </div>
+              </div>
+            </template>
 
-          <!-- 匹配度分数 - 动画效果 -->
-          <div class="marriage-score">
-            <span class="score-label">综合匹配度</span>
-            <div class="score-circle">
-              <svg class="score-svg" viewBox="0 0 100 100">
-                <circle
-                  class="score-bg"
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#444"
-                  stroke-width="8"
-                />
-                <circle
-                  class="score-progress"
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#fff"
-                  stroke-width="8"
-                  :stroke-dasharray="scoreCircumference"
-                  :stroke-dashoffset="scoreOffset"
-                  transform="rotate(-90 50 50)"
-                />
-              </svg>
-              <span class="score-number">{{ displayScore }}</span>
-            </div>
-          </div>
+            <template v-if="displayData.analysis">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">批</span>
+                  <h3>命理解读</h3>
+                  <span class="title-seal">注</span>
+                </div>
+                <div class="analysis-text">{{ displayData.analysis }}</div>
+              </div>
+            </template>
 
-          <!-- 合婚等级 -->
-          <Transition name="fade-up">
-            <div v-if="levelData" class="marriage-level">
-              <span class="level-badge" :class="getLevelClass(levelData)">
-                {{ levelData }}
-              </span>
-            </div>
-          </Transition>
+            <template v-if="displayData.malePillars || displayData.femalePillars">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">双</span>
+                  <h3>八字对照</h3>
+                  <span class="title-seal">方</span>
+                </div>
+                <div class="comparison-pair">
+                  <div class="compare-item">
+                    <span class="compare-tag">男</span>
+                    <span class="compare-pillars">
+                      {{ displayData.malePillars?.map(p => p.heavenly + p.earthly).join(' ') || '-' }}
+                    </span>
+                  </div>
+                  <div class="compare-divider">❧</div>
+                  <div class="compare-item">
+                    <span class="compare-tag">女</span>
+                    <span class="compare-pillars">
+                      {{ displayData.femalePillars?.map(p => p.heavenly + p.earthly).join(' ') || '-' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
 
-          <!-- 详细分析 - 打字机效果 -->
-          <Transition name="fade-up">
-            <div v-if="analysisText" class="marriage-analysis">
-              <h4 class="section-subtitle">详细分析</h4>
-              <p class="analysis-text">{{ displayAnalysis }}</p>
-            </div>
-          </Transition>
+          <!-- 每日运势流式展示 -->
+          <template v-else-if="type === 'fortune'">
+            <template v-if="displayData.totalScore !== undefined">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">运</span>
+                  <h3>今日运势</h3>
+                  <span class="title-seal">势</span>
+                </div>
+                <div class="fortune-total">
+                  <span class="fortune-big-score">{{ displayData.totalScore }}</span>
+                  <span class="fortune-unit">分</span>
+                </div>
+              </div>
+            </template>
 
-          <!-- 八字对比 -->
-          <Transition name="fade-up">
-            <div v-if="pillarsData" class="pillars-comparison">
-              <div class="comparison-section">
-                <h4 class="section-subtitle">男方八字</h4>
-                <div class="mini-pillars">
-                  <span v-for="(p, i) in pillarsData.male" :key="i" class="mini-pillar">
-                    {{ p.heavenly }}{{ p.earthly }}
+            <template v-if="displayData.fortuneTypes && displayData.fortuneTypes.length">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">诸</span>
+                  <h3>各项运势</h3>
+                  <span class="title-seal">事</span>
+                </div>
+                <div class="fortune-items">
+                  <div
+                    v-for="(item, index) in displayData.fortuneTypes"
+                    :key="index"
+                    class="fortune-item-ancient"
+                  >
+                    <span class="fortune-name-ancient">{{ item.name }}</span>
+                    <div class="fortune-bar-ancient">
+                      <div class="fortune-fill" :style="{ width: item.score + '%' }"></div>
+                    </div>
+                    <span class="fortune-score-ancient">{{ item.score }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template v-if="displayData.lucky">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">吉</span>
+                  <h3>幸运指引</h3>
+                  <span class="title-seal">祥</span>
+                </div>
+                <div class="lucky-ancient">
+                  <span class="lucky-ancient-item">
+                    <span class="lucky-icon">色</span>
+                    {{ displayData.lucky.color }}
+                  </span>
+                  <span class="lucky-ancient-item">
+                    <span class="lucky-icon">数</span>
+                    {{ displayData.lucky.number }}
+                  </span>
+                  <span class="lucky-ancient-item">
+                    <span class="lucky-icon">位</span>
+                    {{ displayData.lucky.direction }}
                   </span>
                 </div>
               </div>
-              <div class="comparison-section">
-                <h4 class="section-subtitle">女方八字</h4>
-                <div class="mini-pillars">
-                  <span v-for="(p, i) in pillarsData.female" :key="i" class="mini-pillar">
-                    {{ p.heavenly }}{{ p.earthly }}
-                  </span>
+            </template>
+          </template>
+
+          <!-- 塔罗牌流式展示 -->
+          <template v-else-if="type === 'tarot'">
+            <template v-if="displayData.cards && displayData.cards.length">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">塔</span>
+                  <h3>塔罗解读</h3>
+                  <span class="title-seal">罗</span>
+                </div>
+                <div class="tarot-ancient-list">
+                  <div
+                    v-for="(card, index) in displayData.cards"
+                    :key="index"
+                    class="tarot-ancient-card"
+                  >
+                    <div class="tarot-emoji-ancient">{{ card.emoji }}</div>
+                    <div class="tarot-details">
+                      <div class="tarot-name-ancient">{{ card.name }}</div>
+                      <div class="tarot-position-ancient">{{ card.position }}</div>
+                      <div class="tarot-meaning-ancient">{{ card.meaning }}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Transition>
-        </div>
+            </template>
 
-        <!-- 每日运势结果 -->
-        <div v-else-if="type === 'fortune'" class="fortune-result">
-          <h3 class="result-title">每日运势</h3>
-          <div class="fortune-date">{{ fortuneDate }}</div>
-
-          <!-- 综合分数 -->
-          <div class="fortune-score">
-            <span class="score-label">综合运势</span>
-            <span class="score-number">{{ displayTotalScore }}</span>
-          </div>
-
-          <!-- 各项运势卡片 - 逐个显示 -->
-          <div class="fortune-grid">
-            <div
-              v-for="(item, index) in displayFortuneTypes"
-              :key="index"
-              class="fortune-card"
-              :class="{ 'fortune-show': item.show }"
-            >
-              <div class="fortune-header">
-                <span class="fortune-name">{{ item.name }}</span>
-                <span class="fortune-score">{{ item.score }}分</span>
-              </div>
-              <p class="fortune-desc">{{ item.desc }}</p>
-            </div>
-          </div>
-
-          <!-- 幸运信息 -->
-          <Transition name="fade-up">
-            <div v-if="luckyData" class="lucky-info">
-              <div class="lucky-item">
-                <span class="lucky-icon">🎨</span>
-                <div class="lucky-content">
-                  <span class="lucky-label">幸运色</span>
-                  <span class="lucky-value">{{ luckyData.color }}</span>
+            <template v-if="displayData.interpretation">
+              <div class="ancient-section">
+                <div class="ancient-title">
+                  <span class="title-seal">奥</span>
+                  <h3>奥义解读</h3>
+                  <span class="title-seal">秘</span>
                 </div>
+                <div class="interpretation-ancient">{{ displayData.interpretation }}</div>
               </div>
-              <div class="lucky-item">
-                <span class="lucky-icon">🔢</span>
-                <div class="lucky-content">
-                  <span class="lucky-label">幸运数字</span>
-                  <span class="lucky-value">{{ luckyData.number }}</span>
-                </div>
-              </div>
-              <div class="lucky-item">
-                <span class="lucky-icon">🧭</span>
-                <div class="lucky-content">
-                  <span class="lucky-label">幸运方位</span>
-                  <span class="lucky-value">{{ luckyData.direction }}</span>
-                </div>
-              </div>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- 塔罗牌结果 -->
-        <div v-else-if="type === 'tarot'" class="tarot-result">
-          <h3 class="result-title">塔罗解读</h3>
-
-          <!-- 塔罗牌逐张翻转 -->
-          <div class="tarot-cards">
-            <div
-              v-for="(card, index) in displayCards"
-              :key="index"
-              class="tarot-card-wrapper"
-              :class="{ 'card-show': card.show }"
-            >
-              <div class="tarot-card" :class="{ 'card-flip': card.flipped }">
-                <div class="card-face card-back">
-                  <div class="card-pattern"></div>
-                </div>
-                <div class="card-face card-front">
-                  <span class="card-emoji">{{ card.emoji }}</span>
-                  <span class="card-name">{{ card.name }}</span>
-                  <span class="card-position">{{ card.position }}</span>
-                  <p class="card-meaning">{{ card.meaning }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 综合解读 - 打字机效果 -->
-          <Transition name="fade-up">
-            <div v-if="interpretationText" class="tarot-interpretation">
-              <h4 class="section-subtitle">综合解读</h4>
-              <p class="interpretation-text">{{ displayInterpretation }}</p>
-            </div>
-          </Transition>
+            </template>
+          </template>
         </div>
       </div>
     </Transition>
@@ -245,12 +281,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps({
   type: {
     type: String,
-    default: 'bazi' // bazi, marriage, fortune, tarot
+    default: 'bazi'
   },
   data: {
     type: Object,
@@ -259,194 +295,82 @@ const props = defineProps({
   isCalculating: {
     type: Boolean,
     default: false
+  },
+  streamingContent: {
+    type: String,
+    default: ''
   }
 })
 
-// 计算步骤文本
-const currentStep = ref('正在计算...')
-const progressText = ref('')
-const calculationSteps = {
-  bazi: ['正在解析出生信息...', '正在推算天干地支...', '正在分析五行强弱...', '正在计算十神关系...', '计算完成！'],
-  marriage: ['正在解析双方信息...', '正在推算八字命盘...', '正在分析五行匹配...', '正在计算合婚指数...', '合婚完成！'],
-  fortune: ['正在加载八字信息...', '正在推算当日运势...', '正在分析各项指标...', '正在计算幸运信息...', '运势分析完成！'],
-  tarot: ['正在洗牌...', '正在抽取塔罗牌...', '正在解读牌面含义...', '正在综合分析...', '占卜完成！']
+// 状态
+const thinkingText = ref('推演中...')
+const displayData = ref({})
+
+// 思考文本映射
+const thinkingTexts = {
+  bazi: ['正在推算八字...', '正在解析天干...', '正在参悟地支...'],
+  marriage: ['正在合算八字...', '正在推演姻缘...', '正在验证命格...'],
+  fortune: ['正在观星测运...', '正在推演吉凶...', '正在解析运势...'],
+  tarot: ['正在洗牌...', '正在抽取牌阵...', '正在解读神谕...']
 }
-
-// 结果展示
-const showResult = ref(false)
-const displayPillars = ref([])
-const displayShishen = ref([])
-const wuxingData = ref(null)
-const shishenData = ref(null)
-
-// 合婚相关
-const displayScore = ref(0)
-const targetScore = ref(0)
-const levelData = ref('')
-const analysisText = ref('')
-const displayAnalysis = ref('')
-const pillarsData = ref(null)
-const scoreCircumference = 2 * Math.PI * 45
-
-// 运势相关
-const fortuneDate = ref('')
-const displayTotalScore = ref(0)
-const displayFortuneTypes = ref([])
-const luckyData = ref(null)
-
-// 塔罗相关
-const displayCards = ref([])
-const interpretationText = ref('')
-const displayInterpretation = ref('')
-
-// 计算分数动画
-const scoreOffset = computed(() => {
-  const progress = displayScore.value / 100
-  return scoreCircumference * (1 - progress)
-})
 
 // 监听计算状态
 watch(() => props.isCalculating, (newVal) => {
   if (newVal) {
-    showResult.value = false
-    startCalculationAnimation()
+    displayData.value = {}
+    startThinkingAnimation()
+  } else {
+    thinkingText.value = '推演完成'
   }
 })
 
-// 监听数据变化
+// 监听流式内容
+watch(() => props.streamingContent, (newContent) => {
+  if (newContent) {
+    console.log('[StreamingResult] 流式内容更新:', newContent.substring(0, 100))
+    // 尝试解析 JSON
+    try {
+      let parsed = JSON.parse(newContent)
+      if (parsed && typeof parsed === 'object') {
+        console.log('[StreamingResult] JSON 解析成功:', parsed)
+        displayData.value = parsed
+      }
+    } catch {
+      try {
+        const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/
+        const match = newContent.match(codeBlockRegex)
+        if (match && match[1]) {
+          const parsed = JSON.parse(match[1].trim())
+          console.log('[StreamingResult] 从 markdown 提取成功:', parsed)
+          displayData.value = parsed
+        }
+      } catch {
+        console.log('[StreamingResult] JSON 未完成，继续累积...')
+      }
+    }
+  }
+})
+
+// 监听最终数据
 watch(() => props.data, (newData) => {
-  if (newData) {
-    showResult.value = true
-    displayResult(newData)
+  if (newData && !props.isCalculating) {
+    console.log('[StreamingResult] 收到最终数据:', newData)
+    displayData.value = newData
   }
 })
 
-// 开始计算动画
-const startCalculationAnimation = async () => {
-  const steps = calculationSteps[props.type] || calculationSteps.bazi
-  for (let i = 0; i < steps.length; i++) {
-    currentStep.value = steps[i]
-    progressText.value = `${Math.round((i + 1) / steps.length * 100)}%`
-    await new Promise(resolve => setTimeout(resolve, 500))
-  }
-}
-
-// 显示结果
-const displayResult = async (data) => {
-  if (props.type === 'bazi') {
-    await displayBaziResult(data)
-  } else if (props.type === 'marriage') {
-    await displayMarriageResult(data)
-  } else if (props.type === 'fortune') {
-    await displayFortuneResult(data)
-  } else if (props.type === 'tarot') {
-    await displayTarotResult(data)
-  }
-}
-
-// 八字结果展示
-const displayBaziResult = async (data) => {
-  displayPillars.value = (data.pillars || []).map(p => ({ ...p, show: false }))
-  wuxingData.value = data.wuxing || null
-  shishenData.value = data.shishen || null
-  displayShishen.value = (data.shishen || []).map(s => ({ ...s, show: false }))
-
-  // 逐个显示柱
-  for (let i = 0; i < displayPillars.value.length; i++) {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    displayPillars.value[i].show = true
-  }
-
-  // 显示十神
-  await new Promise(resolve => setTimeout(resolve, 400))
-  for (let i = 0; i < displayShishen.value.length; i++) {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    displayShishen.value[i].show = true
-  }
-}
-
-// 合婚结果展示
-const displayMarriageResult = async (data) => {
-  targetScore.value = data.score || 0
-  levelData.value = data.level || ''
-  analysisText.value = data.analysis || ''
-  displayAnalysis.value = ''
-  pillarsData.value = {
-    male: data.malePillars || [],
-    female: data.femalePillars || []
-  }
-
-  // 分数动画
-  const duration = 2000
-  const steps = 60
-  const increment = targetScore.value / steps
-  for (let i = 0; i <= steps; i++) {
-    displayScore.value = Math.round(increment * i)
-    await new Promise(resolve => setTimeout(resolve, duration / steps))
-  }
-
-  // 打字机效果显示分析
-  await typeWriter(analysisText.value, (text) => {
-    displayAnalysis.value = text
-  })
-}
-
-// 运势结果展示
-const displayFortuneResult = async (data) => {
-  fortuneDate.value = data.date || ''
-  displayTotalScore.value = 0
-  const targetScore = data.totalScore || 85
-
-  displayFortuneTypes.value = (data.fortuneTypes || []).map(f => ({ ...f, show: false }))
-  luckyData.value = data.lucky || null
-
-  // 分数动画
-  for (let i = 0; i <= targetScore; i += 2) {
-    displayTotalScore.value = i
-    await new Promise(resolve => setTimeout(resolve, 30))
-  }
-
-  // 逐个显示运势卡片
-  for (let i = 0; i < displayFortuneTypes.value.length; i++) {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    displayFortuneTypes.value[i].show = true
-  }
-}
-
-// 塔罗结果展示
-const displayTarotResult = async (data) => {
-  displayCards.value = (data.cards || []).map(c => ({ ...c, show: false, flipped: false }))
-  interpretationText.value = data.interpretation || ''
-  displayInterpretation.value = ''
-
-  // 逐张翻牌
-  for (let i = 0; i < displayCards.value.length; i++) {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    displayCards.value[i].show = true
-    await new Promise(resolve => setTimeout(resolve, 200))
-    displayCards.value[i].flipped = true
-  }
-
-  // 打字机效果
-  await typeWriter(interpretationText.value, (text) => {
-    displayInterpretation.value = text
-  })
-}
-
-// 打字机效果
-const typeWriter = async (text, callback) => {
-  let result = ''
-  for (let i = 0; i < text.length; i++) {
-    result += text[i]
-    callback(result)
-    await new Promise(resolve => setTimeout(resolve, 30))
-  }
-}
-
-// 获取强度样式类
-const getStrengthClass = (strength) => {
-  const map = { '强': 'strong', '中': 'medium', '弱': 'weak' }
-  return map[strength] || 'medium'
+// 思考动画
+const startThinkingAnimation = () => {
+  const texts = thinkingTexts[props.type] || thinkingTexts.bazi
+  let index = 0
+  const interval = setInterval(() => {
+    if (props.isCalculating) {
+      thinkingText.value = texts[index % texts.length]
+      index++
+    } else {
+      clearInterval(interval)
+    }
+  }, 1500)
 }
 
 // 获取等级样式类
@@ -461,630 +385,662 @@ const getLevelClass = (level) => {
 /* ========== 容器 ========== */
 .streaming-result {
   width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* ========== 计算中动画 ========== */
+/* ========== 传统阴阳鱼 Loading 动画 ========== */
 .calculating-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60px 20px;
-  background: linear-gradient(135deg, #333 0%, #555 100%);
-  border-radius: 20px;
-  animation: fadeIn 0.5s ease;
+  padding: 30px 20px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.calculation-animation {
+.yinyang-fish-wrapper {
   position: relative;
-  width: 120px;
-  height: 120px;
-  margin-bottom: 32px;
-}
-
-.calc-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 4px solid transparent;
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-.calc-ring:nth-child(1) { animation-delay: 0s; }
-.calc-ring:nth-child(2) {
-  width: 80%;
-  height: 80%;
-  top: 10%;
-  left: 10%;
-  animation-delay: 0.15s;
-  animation-direction: reverse;
-}
-.calc-ring:nth-child(3) {
-  width: 60%;
-  height: 60%;
-  top: 20%;
-  left: 20%;
-  animation-delay: 0.3s;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.calculation-text {
-  text-align: center;
-}
-
-.calculation-text .main-text {
-  font-size: 18px;
-  color: #fff;
-  margin: 0 0 8px;
-  font-weight: 600;
-}
-
-.calculation-text .sub-text {
-  font-size: 14px;
-  color: #ccc;
-  margin: 0;
-}
-
-/* ========== 结果容器 ========== */
-.result-container {
-  padding: 40px;
-  background: linear-gradient(135deg, #333 0%, #555 100%);
-  border-radius: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-}
-
-.result-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 24px;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* ========== 八字结果 ========== */
-.pillar-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  max-width: 550px;
-  margin: 0 auto 32px;
-}
-
-.pillar-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 24px;
-  text-align: center;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.pillar-card.pillar-show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.pillar-name {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 12px;
-  font-weight: 500;
-  letter-spacing: 1px;
-}
-
-.pillar-content {
-  display: flex;
-  gap: 8px;
-}
-
-.pillar-char {
-  flex: 1;
-  font-size: 32px;
-  font-weight: 700;
-  color: #000;
-}
-
-.section-subtitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 16px;
-  letter-spacing: 0.5px;
-}
-
-/* 五行分析 */
-.wuxing-analysis {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
+  width: 80px;
+  height: 80px;
   margin-bottom: 20px;
 }
 
-.wuxing-info {
+.yinyang-fish-svg {
+  width: 100%;
+  height: 100%;
+  animation: fish-spin 8s linear infinite;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+.yinyang-group {
+  transform-origin: center;
+}
+
+@keyframes fish-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.calculating-text {
+  font-size: 14px;
+  color: #000;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* ========== 流式容器 ========== */
+.flowing-container {
+  width: 100%;
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== 实时流式内容块 ========== */
+.streaming-block {
+  margin-bottom: 20px;
+  background: #fafafa;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.streaming-header {
   display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #f5f5f5;
+}
+
+.streaming-icon {
+  font-size: 14px;
+  color: #999;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.streaming-title {
+  flex: 1;
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.streaming-dot {
+  width: 6px;
+  height: 6px;
+  background: #999;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.streaming-body {
+  padding: 16px;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.streaming-body::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.streaming-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.streaming-body::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 2px;
+}
+
+.streaming-body::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
+}
+
+.streaming-content-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+/* ========== 结果流 ========== */
+.result-flow {
+  width: 100%;
+}
+
+.ancient-section {
+  margin-bottom: 50px;
+  animation: ancient-appear 0.6s ease-out;
+}
+
+@keyframes ancient-appear {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== 古风标题 ========== */
+.ancient-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 35px;
+  padding: 20px 0;
+  position: relative;
+}
+
+.ancient-title::before,
+.ancient-title::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8b4513, transparent);
+}
+
+.title-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #8b4513 0%, #cd853f 100%);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(139, 69, 19, 0.3);
+  border: 2px solid #daa520;
+}
+
+.ancient-title h3 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c1810;
+  margin: 0;
+  letter-spacing: 8px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== 八字命盘 ========== */
+.pillars-scroll {
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 3px solid #8b4513;
+  border-radius: 4px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(139, 69, 19, 0.15);
+}
+
+.pillar-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.pillar-box {
+  text-align: center;
+}
+
+.pillar-name {
+  font-size: 14px;
+  color: #8b4513;
+  margin-bottom: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.pillar-pillar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heavenly,
+.earthly {
+  font-size: 42px;
+  font-weight: 700;
+  color: #2c1810;
+  letter-spacing: 8px;
+  line-height: 1;
+}
+
+.heavenly {
+  color: #8b0000;
+}
+
+.earthly {
+  color: #00008b;
+}
+
+/* ========== 五行分析 ========== */
+.wuxing-text {
+  text-align: center;
+  font-size: 20px;
+  line-height: 2;
+  color: #2c1810;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+  padding: 25px;
+  letter-spacing: 2px;
 }
 
 .wuxing-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  color: #8b4513;
+  font-weight: 600;
 }
 
 .wuxing-value {
-  font-size: 14px;
-  color: #000;
-  font-weight: 600;
+  color: #8b0000;
+  font-weight: 700;
+  font-size: 22px;
 }
 
-/* 十神分析 */
-.shishen-analysis {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
+.wuxing-divider {
+  color: #daa520;
+  margin: 0 20px;
 }
 
-.shishen-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+/* ========== 十神分析 ========== */
+.shishen-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
 }
 
 .shishen-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: #f5f5f5;
-  border-radius: 10px;
-  opacity: 0;
-  transform: translateX(-10px);
-  transition: all 0.3s ease;
-}
-
-.shishen-item.shishen-show {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.shishen-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #000;
-}
-
-.shishen-strength {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #8b4513 0%, #cd853f 100%);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 18px;
   font-weight: 600;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 15px rgba(139, 69, 19, 0.3);
+  border: 2px solid #daa520;
 }
 
-.shishen-strength.strong {
-  background: #d4edda;
-  color: #155724;
+.strength-mark {
+  margin-left: 10px;
+  font-size: 14px;
+  opacity: 0.9;
 }
 
-.shishen-strength.medium {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.shishen-strength.weak {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-/* ========== 合婚结果 ========== */
-.marriage-score {
+/* ========== 合婚分数 ========== */
+.marriage-score-display {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 24px;
+  gap: 25px;
+  padding: 40px;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 3px solid #8b4513;
+  border-radius: 4px;
 }
 
-.score-label {
-  font-size: 14px;
-  color: #fff;
-  margin-bottom: 16px;
-  font-weight: 500;
-}
-
-.score-circle {
-  position: relative;
-  width: 140px;
-  height: 140px;
-}
-
-.score-svg {
-  width: 100%;
-  height: 100%;
-}
-
-.score-progress {
-  transition: stroke-dashoffset 2s ease-out;
+.score-circle-ancient {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b4513 0%, #cd853f 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(139, 69, 19, 0.4);
+  border: 4px solid #daa520;
 }
 
 .score-number {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 36px;
+  font-size: 56px;
   font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 18px;
+  color: #fff;
+  margin-top: 5px;
+}
+
+.level-text {
+  padding: 12px 35px;
+  border-radius: 4px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  border: 2px solid #daa520;
+}
+
+.level-text.level-high {
+  background: linear-gradient(135deg, #228b22 0%, #32cd32 100%);
   color: #fff;
 }
 
-.marriage-level {
+.level-text.level-medium {
+  background: linear-gradient(135deg, #daa520 0%, #ffd700 100%);
+  color: #2c1810;
+}
+
+.level-text.level-low {
+  background: linear-gradient(135deg, #8b0000 0%, #cd5c5c 100%);
+  color: #fff;
+}
+
+/* ========== 分析文字 ========== */
+.analysis-text,
+.interpretation-ancient {
   text-align: center;
-  margin-bottom: 24px;
+  font-size: 18px;
+  line-height: 2;
+  color: #2c1810;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+  padding: 30px;
+  letter-spacing: 2px;
+  white-space: pre-wrap;
 }
 
-.level-badge {
-  display: inline-block;
-  padding: 10px 24px;
-  border-radius: 20px;
-  font-size: 16px;
-  font-weight: 600;
+/* ========== 八字对照 ========== */
+.comparison-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 30px;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
 }
 
-.level-badge.level-high {
-  background: #d4edda;
-  color: #155724;
+.compare-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
-.level-badge.level-medium {
-  background: #fff3cd;
-  color: #856404;
+.compare-tag {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8b4513 0%, #cd853f 100%);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 4px;
+  border: 2px solid #daa520;
 }
 
-.level-badge.level-low {
-  background: #f8d7da;
-  color: #721c24;
+.compare-pillars {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c1810;
+  letter-spacing: 4px;
 }
 
-.marriage-analysis {
-  background: #fff;
-  border-radius: 14px;
-  padding: 24px;
-  margin-bottom: 24px;
+.compare-divider {
+  font-size: 32px;
+  color: #daa520;
 }
 
-.analysis-text {
-  font-size: 16px;
-  color: #000;
-  line-height: 1.8;
-  margin: 0;
+/* ========== 运势分数 ========== */
+.fortune-total {
+  text-align: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #8b0000 0%, #cd5c5c 100%);
+  border-radius: 4px;
+  border: 3px solid #daa520;
+  box-shadow: 0 8px 32px rgba(139, 0, 0, 0.3);
 }
 
-.pillars-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.fortune-big-score {
+  font-size: 80px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.fortune-unit {
+  font-size: 24px;
+  color: #fff;
+  margin-left: 10px;
+}
+
+/* ========== 各项运势 ========== */
+.fortune-items {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-.comparison-section {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
-}
-
-.comparison-section .section-subtitle {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-.mini-pillars {
+.fortune-item-ancient {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.mini-pillar {
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-}
-
-/* ========== 运势结果 ========== */
-.fortune-result .result-title {
-  margin-bottom: 8px;
-}
-
-.fortune-date {
-  text-align: center;
-  font-size: 14px;
-  color: #ccc;
-  margin-bottom: 24px;
-}
-
-.fortune-score {
-  display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
 }
 
-.fortune-score .score-label {
-  font-size: 16px;
+.fortune-name-ancient {
+  min-width: 100px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #8b4513;
+  letter-spacing: 2px;
 }
 
-.fortune-score .score-number {
-  font-size: 48px;
+.fortune-bar-ancient {
+  flex: 1;
+  height: 12px;
+  background: #e8e0d5;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.fortune-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b4513 0%, #cd853f 50%, #daa520 100%);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+}
+
+.fortune-score-ancient {
+  min-width: 50px;
+  text-align: right;
+  font-size: 22px;
   font-weight: 700;
-  color: #fff;
+  color: #8b0000;
 }
 
-.fortune-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.fortune-card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
-  opacity: 0;
-  transform: scale(0.9);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fortune-card.fortune-show {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.fortune-header {
+/* ========== 幸运指引 ========== */
+.lucky-ancient {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 40px;
+  padding: 30px;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+}
+
+.lucky-ancient-item {
+  display: flex;
   align-items: center;
-  margin-bottom: 12px;
-}
-
-.fortune-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-}
-
-.fortune-score {
+  gap: 10px;
   font-size: 20px;
-  font-weight: 700;
-  color: #667eea;
-}
-
-.fortune-desc {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.lucky-info {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.lucky-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
+  color: #2c1810;
+  font-weight: 600;
+  letter-spacing: 2px;
 }
 
 .lucky-icon {
-  font-size: 24px;
-}
-
-.lucky-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.lucky-label {
-  font-size: 11px;
-  color: #999;
-  margin-bottom: 4px;
-}
-
-.lucky-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-}
-
-/* ========== 塔罗结果 ========== */
-.tarot-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 32px;
-}
-
-.tarot-card-wrapper {
-  aspect-ratio: 3/4;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.5s ease;
-}
-
-.tarot-card-wrapper.card-show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.tarot-card {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  perspective: 1000px;
-  cursor: pointer;
-}
-
-.tarot-card.card-flip .card-back {
-  transform: rotateY(180deg);
-}
-
-.tarot-card.card-flip .card-front {
-  transform: rotateY(0deg);
-}
-
-.card-face {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.card-back {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-pattern {
-  width: 80%;
-  height: 80%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.1) 10px,
-    rgba(255, 255, 255, 0.1) 20px
-  );
-}
-
-.card-front {
-  background: #fff;
-  transform: rotateY(-180deg);
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 20px;
-  text-align: center;
-}
-
-.card-emoji {
-  font-size: 48px;
-  margin-bottom: 12px;
-}
-
-.card-name {
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #8b4513 0%, #cd853f 100%);
+  color: #fff;
+  border-radius: 4px;
   font-size: 16px;
+  border: 2px solid #daa520;
+}
+
+/* ========== 塔罗牌 ========== */
+.tarot-ancient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.tarot-ancient-card {
+  display: flex;
+  gap: 25px;
+  padding: 30px;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #8b4513;
+  border-radius: 4px;
+  align-items: flex-start;
+}
+
+.tarot-emoji-ancient {
+  font-size: 60px;
+  line-height: 1;
+}
+
+.tarot-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tarot-name-ancient {
+  font-size: 24px;
+  font-weight: 700;
+  color: #8b0000;
+  letter-spacing: 2px;
+}
+
+.tarot-position-ancient {
+  font-size: 14px;
+  color: #8b4513;
   font-weight: 600;
-  color: #000;
-  margin-bottom: 8px;
+  letter-spacing: 2px;
 }
 
-.card-position {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 12px;
-}
-
-.card-meaning {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.tarot-interpretation {
-  background: #fff;
-  border-radius: 14px;
-  padding: 24px;
-}
-
-.interpretation-text {
-  font-size: 15px;
-  color: #000;
+.tarot-meaning-ancient {
+  font-size: 16px;
+  color: #2c1810;
   line-height: 1.8;
-  margin: 0;
+  letter-spacing: 1px;
 }
 
 /* ========== 过渡动画 ========== */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.fade-up-enter-active {
+.ancient-fade-enter-active,
+.ancient-fade-leave-active {
   transition: all 0.5s ease;
 }
 
-.fade-up-enter-from {
+.ancient-fade-enter-from,
+.ancient-fade-leave-to {
   opacity: 0;
-  transform: translateY(20px);
 }
 
-.result-slide-enter-active {
-  transition: all 0.5s ease;
+.slide-in-enter-active {
+  transition: all 0.4s ease;
 }
 
-.result-slide-enter-from {
+.slide-in-enter-from {
   opacity: 0;
-  transform: scale(0.95);
+  transform: translateY(10px);
 }
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
-  .pillar-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .pillar-row {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
-  .fortune-grid {
-    grid-template-columns: 1fr;
+  .pillar-box {
+    min-width: 45%;
   }
 
-  .tarot-cards {
-    grid-template-columns: 1fr;
+  .heavenly,
+  .earthly {
+    font-size: 32px;
   }
 
-  .pillars-comparison {
-    grid-template-columns: 1fr;
+  .compare-pillars {
+    font-size: 18px;
   }
 
-  .lucky-info {
-    grid-template-columns: 1fr;
+  .fortune-item-ancient {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 
-  .result-container {
-    padding: 24px;
+  .fortune-bar-ancient {
+    width: 100%;
+  }
+
+  .lucky-ancient {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .comparison-pair {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .ancient-title h3 {
+    font-size: 24px;
+    letter-spacing: 4px;
+  }
+
+  .title-seal {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .streaming-body {
+    width: 100%;
   }
 }
 </style>

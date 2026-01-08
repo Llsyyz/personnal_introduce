@@ -125,7 +125,9 @@
           <p class="page-subtitle">精准解析生辰八字，揭示命盘奥秘</p>
         </div>
 
-        <div class="form-container">
+        <div class="content-wrapper">
+          <!-- 表单区域 -->
+          <div class="form-container">
           <!-- 基本信息 -->
           <div class="form-section">
             <h3 class="section-title">基本信息</h3>
@@ -244,12 +246,15 @@
         </div>
 
         <!-- 流式计算结果 -->
-        <StreamingResult
-          v-if="calculating || baziResult"
-          type="bazi"
-          :data="baziResult"
-          :is-calculating="calculating"
-        />
+        <div v-if="calculating || baziResult" class="streaming-container">
+          <StreamingResult
+            type="bazi"
+            :data="baziResult"
+            :is-calculating="calculating"
+            :streaming-content="baziStreamingContent"
+          />
+        </div>
+      </div>
       </div>
 
       <!-- 八字合婚页面 -->
@@ -259,7 +264,8 @@
           <p class="page-subtitle">基于传统命理学，分析双方婚姻匹配度</p>
         </div>
 
-        <div class="marriage-form-container">
+        <div class="content-wrapper">
+          <div class="marriage-form-container">
           <div class="dual-form">
             <!-- 男方信息 -->
             <div class="person-form male">
@@ -402,12 +408,15 @@
         </div>
 
         <!-- 流式合婚结果 -->
-        <StreamingResult
-          v-if="marrying || marriageResult"
-          type="marriage"
-          :data="marriageResult"
-          :is-calculating="marrying"
-        />
+        <div v-if="marrying || marriageResult" class="streaming-container">
+          <StreamingResult
+            type="marriage"
+            :data="marriageResult"
+            :is-calculating="marrying"
+            :streaming-content="marriageStreamingContent"
+          />
+        </div>
+      </div>
       </div>
 
       <!-- 每日运势页面 -->
@@ -516,7 +525,7 @@ import {
   HomeFilled, ChatDotRound, Collection, User, ArrowDown, SwitchButton
 } from '@element-plus/icons-vue'
 import { logoutApi } from '@/api/login'
-import { baziCalculateApi, baziMarriageApi, fortuneDailyApi, tarotDrawApi } from '@/api/bazi'
+import { streamBaziCalculate, streamBaziMarriage } from '@/utils/sse'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
 import FortuneCard from '@/components/chat/FortuneCard.vue'
 import TarotForm from '@/components/chat/TarotForm.vue'
@@ -538,6 +547,10 @@ const activeTab = ref('calculate')
 const calculating = ref(false)
 const marrying = ref(false)
 const drawing = ref(false)
+
+// 流式内容状态
+const baziStreamingContent = ref('')
+const marriageStreamingContent = ref('')
 
 // 八字计算表单
 const calculateForm = reactive({
@@ -642,21 +655,36 @@ const handleCalculate = async () => {
   }
 
   calculating.value = true
+  baziStreamingContent.value = ''
 
-  try {
-    const response = await baziCalculateApi(calculateForm)
-    baziResult.value = response.data
-    // 保存八字信息用于每日运势
-    baziInfo.value = {
-      name: calculateForm.name,
-      id: response.data.id || Date.now().toString()
+  streamBaziCalculate(calculateForm, {
+    onStart: (data) => {
+      console.log('[Chat] 开始计算:', data)
+    },
+    onChunk: (content) => {
+      console.log('[Chat] 收到 chunk:', content)
+      baziStreamingContent.value += content
+      console.log('[Chat] streamingContent 长度:', baziStreamingContent.value.length)
+    },
+    onValidationStart: (data) => {
+      console.log('[Chat] 开始验证:', data)
+    },
+    onComplete: (result) => {
+      console.log('[Chat] 计算完成:', result)
+      baziResult.value = result
+      baziInfo.value = {
+        name: calculateForm.name,
+        id: result.id || Date.now().toString()
+      }
+      calculating.value = false
+      ElMessage.success('计算成功')
+    },
+    onError: (error) => {
+      console.error('[Chat] 错误:', error)
+      ElMessage.error(error || '计算失败，请重试')
+      calculating.value = false
     }
-    ElMessage.success(response.message || '计算成功')
-  } catch (error) {
-    ElMessage.error(error.response?.data?.message || '计算失败，请重试')
-  } finally {
-    calculating.value = false
-  }
+  })
 }
 
 // 处理八字合婚
@@ -680,40 +708,53 @@ const handleMarriage = async () => {
   }
 
   marrying.value = true
+  marriageStreamingContent.value = ''
 
-  try {
-    const requestData = {
-      male: {
-        name: marriageForm.male.name,
-        gender: marriageForm.male.gender,
-        calendarType: marriageForm.male.calendarType,
-        birthDate: marriageForm.male.birthDate,
-        knowTime: marriageForm.male.knowTime,
-        hour: marriageForm.male.hour,
-        minute: marriageForm.male.minute,
-        birthPlace: marriageForm.male.birthPlace,
-        ziHour: marriageForm.male.ziHour
-      },
-      female: {
-        name: marriageForm.female.name,
-        gender: marriageForm.female.gender,
-        calendarType: marriageForm.female.calendarType,
-        birthDate: marriageForm.female.birthDate,
-        knowTime: marriageForm.female.knowTime,
-        hour: marriageForm.female.hour,
-        minute: marriageForm.female.minute,
-        birthPlace: marriageForm.female.birthPlace,
-        ziHour: marriageForm.female.ziHour
-      }
+  const requestData = {
+    male: {
+      name: marriageForm.male.name,
+      gender: marriageForm.male.gender,
+      calendarType: marriageForm.male.calendarType,
+      birthDate: marriageForm.male.birthDate,
+      knowTime: marriageForm.male.knowTime,
+      hour: marriageForm.male.hour,
+      minute: marriageForm.male.minute,
+      birthPlace: marriageForm.male.birthPlace,
+      ziHour: marriageForm.male.ziHour
+    },
+    female: {
+      name: marriageForm.female.name,
+      gender: marriageForm.female.gender,
+      calendarType: marriageForm.female.calendarType,
+      birthDate: marriageForm.female.birthDate,
+      knowTime: marriageForm.female.knowTime,
+      hour: marriageForm.female.hour,
+      minute: marriageForm.female.minute,
+      birthPlace: marriageForm.female.birthPlace,
+      ziHour: marriageForm.female.ziHour
     }
-    const response = await baziMarriageApi(requestData)
-    marriageResult.value = response.data
-    ElMessage.success(response.message || '合婚完成')
-  } catch (error) {
-    ElMessage.error(error.response?.data?.message || '合婚失败，请重试')
-  } finally {
-    marrying.value = false
   }
+
+  streamBaziMarriage(requestData, {
+    onStart: (data) => {
+      console.log('开始合婚:', data)
+    },
+    onChunk: (content) => {
+      marriageStreamingContent.value += content
+    },
+    onValidationStart: (data) => {
+      console.log('开始验证:', data)
+    },
+    onComplete: (result) => {
+      marriageResult.value = result
+      marrying.value = false
+      ElMessage.success('合婚完成')
+    },
+    onError: (error) => {
+      ElMessage.error(error || '合婚失败，请重试')
+      marrying.value = false
+    }
+  })
 }
 
 // 处理塔罗牌抽取
@@ -1243,10 +1284,25 @@ onMounted(() => {
 }
 
 /* ========== 表单容器 ========== */
-.form-container {
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: center;
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 900px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.streaming-container {
+  width: 100%;
+  max-width: 900px;
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -1363,8 +1419,7 @@ onMounted(() => {
 /* ========== 八字合婚 ========== */
 .marriage-form-container {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 900px;
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -1788,6 +1843,16 @@ onMounted(() => {
   .quick-actions .action-btn:nth-child(4),
   .quick-actions .action-btn:nth-child(5) {
     display: none;
+  }
+
+  .content-wrapper {
+    gap: 24px;
+  }
+
+  .form-container,
+  .marriage-form-container,
+  .streaming-container {
+    max-width: 100%;
   }
 
   .dual-form {
