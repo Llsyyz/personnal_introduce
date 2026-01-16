@@ -1,6 +1,8 @@
 /**
  * SSE (Server-Sent Events) 流式请求工具
  * 用于处理命理大师 API 的流式输出
+ * 更新日期: 2025-01-09
+ * 版本: v1.1
  */
 
 /**
@@ -44,9 +46,11 @@ function tryParseJSON(text) {
  * @param {string} url - 请求 URL
  * @param {Object} data - 请求数据
  * @param {Object} callbacks - 回调函数
- * @param {Function} callbacks.onStart - 开始生成回调
+ * @param {Function} callbacks.onStart - 开始处理回调
+ * @param {Function} callbacks.onStreamStart - 流式生成开始回调
  * @param {Function} callbacks.onChunk - 内容块回调
- * @param {Function} callbacks.onValidationStart - 验证开始回调
+ * @param {Function} callbacks.onStreamComplete - 流式生成完成回调
+ * @param {Function} callbacks.onStructureStart - 结构化开始回调
  * @param {Function} callbacks.onComplete - 完成回调
  * @param {Function} callbacks.onError - 错误回调
  * @returns {Object} - 包含 abort 方法的对象
@@ -54,8 +58,10 @@ function tryParseJSON(text) {
 export async function streamRequest(url, data, callbacks = {}) {
   const {
     onStart = () => {},
+    onStreamStart = () => {},
     onChunk = () => {},
-    onValidationStart = () => {},
+    onStreamComplete = () => {},
+    onStructureStart = () => {},
     onComplete = () => {},
     onError = () => {}
   } = callbacks
@@ -87,8 +93,8 @@ export async function streamRequest(url, data, callbacks = {}) {
       if (done) break
 
       buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n\n')
-      buffer = lines.pop() // 保留未完成的行
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || '' // 保留未完成的行
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -97,36 +103,38 @@ export async function streamRequest(url, data, callbacks = {}) {
 
             switch (event.type) {
               case 'start':
-                console.log('[SSE] 开始生成:', event.data.request_id)
+                console.log('[SSE] 开始处理:', event.data.request_id)
                 onStart(event.data)
                 break
 
-              case 'chunk':
+              case 'stream_start':
+                console.log('[SSE] 开始流式生成:', event.data.service)
+                onStreamStart(event.data)
+                break
+
+              case 'stream_chunk':
                 console.log('[SSE] 收到 chunk:', event.data.content)
                 onChunk(event.data.content, event.data)
                 break
 
-              case 'validation_start':
-                console.log('[SSE] 开始验证结构...')
-                onValidationStart(event.data)
+              case 'stream_complete':
+                console.log('[SSE] 流式生成完成，内容长度:', event.data.content_length)
+                onStreamComplete(event.data)
+                break
+
+              case 'structure_start':
+                console.log('[SSE] 开始结构化:', event.data.message)
+                onStructureStart(event.data)
                 break
 
               case 'complete':
-                console.log('[SSE] 完成，result:', event.data.result)
-                // 尝试解析 result，可能包含 markdown 代码块
-                let result = event.data.result
-                if (typeof result === 'string') {
-                  const parsed = tryParseJSON(result)
-                  if (parsed) {
-                    result = parsed
-                  }
-                }
-                onComplete(result)
+                console.log('[SSE] 完成，result:', event.data.result, 'is_mock:', event.data.is_mock)
+                onComplete(event.data)
                 break
 
               case 'error':
                 console.error('[SSE] 错误:', event.data.error)
-                onError(event.data.error)
+                onError(event.data)
                 break
 
               default:
@@ -143,7 +151,7 @@ export async function streamRequest(url, data, callbacks = {}) {
       console.log('[SSE] 请求已取消')
     } else {
       console.error('[SSE] 请求失败:', error)
-      onError(error.message || '请求失败')
+      onError({ error: error.message })
     }
   }
 
@@ -157,7 +165,7 @@ export async function streamRequest(url, data, callbacks = {}) {
  */
 export function streamBaziCalculate(data, callbacks) {
   return streamRequest(
-    'http://127.0.0.1:8000/api/v1/bazi/calculate/stream',
+    'http://localhost:8000/api/v1/bazi/calculate/stream',
     data,
     callbacks
   )
@@ -168,7 +176,7 @@ export function streamBaziCalculate(data, callbacks) {
  */
 export function streamBaziMarriage(data, callbacks) {
   return streamRequest(
-    'http://127.0.0.1:8000/api/v1/bazi/marriage/stream',
+    'http://localhost:8000/api/v1/bazi/marriage/stream',
     data,
     callbacks
   )
@@ -179,7 +187,7 @@ export function streamBaziMarriage(data, callbacks) {
  */
 export function streamFortuneDaily(data, callbacks) {
   return streamRequest(
-    'http://127.0.0.1:8000/api/v1/fortune/daily/stream',
+    'http://localhost:8000/api/v1/fortune/daily/stream',
     data,
     callbacks
   )
@@ -190,7 +198,7 @@ export function streamFortuneDaily(data, callbacks) {
  */
 export function streamTarotDraw(data, callbacks) {
   return streamRequest(
-    'http://127.0.0.1:8000/api/v1/tarot/draw/stream',
+    'http://localhost:8000/api/v1/tarot/draw/stream',
     data,
     callbacks
   )

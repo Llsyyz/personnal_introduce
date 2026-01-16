@@ -47,6 +47,13 @@
 
         <!-- 结构化结果展示 -->
         <div v-if="displayData && Object.keys(displayData).length && !isCalculating" class="result-flow">
+          <!-- 模拟数据提示 -->
+          <Transition name="mock-badge">
+            <div v-if="isMock" class="mock-data-badge">
+              <span class="mock-icon">⚠</span>
+              <span class="mock-text">此结果为模拟数据（API调用失败时的兜底方案）</span>
+            </div>
+          </Transition>
           <!-- 八字计算流式展示 -->
           <template v-if="type === 'bazi'">
             <!-- 八字命盘 -->
@@ -299,6 +306,10 @@ const props = defineProps({
   streamingContent: {
     type: String,
     default: ''
+  },
+  isMock: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -388,6 +399,39 @@ const getLevelClass = (level) => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* ========== 模拟数据提示 ========== */
+.mock-data-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border: 2px solid #ffb74d;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(255, 183, 77, 0.2);
+}
+
+.mock-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.mock-text {
+  font-size: 14px;
+  color: #e65100;
+  font-weight: 500;
+}
+
+.mock-badge-enter-active {
+  transition: all 0.3s ease;
+}
+
+.mock-badge-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* ========== 传统阴阳鱼 Loading 动画 ========== */

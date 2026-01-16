@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 前端服务
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notespace-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - chat-api
+    networks:
+      - notespace-network
+
+  # 主后端服务（需根据实际后端调整）
+  backend:
+    image: notespace-backend:latest
+    container_name: notespace-backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - notespace-network
+    environment:
+      - NODE_ENV=production
+
+  # Chat API 服务（需根据实际后端调整）
+  chat-api:
+    image: notespace-chat-api:latest
+    container_name: notespace-chat-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - notespace-network
+    environment:
+      - PYTHON_ENV=production
+
+networks:
+  notespace-network:
+    driver: bridge

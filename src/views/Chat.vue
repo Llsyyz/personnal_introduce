@@ -252,6 +252,7 @@
             :data="baziResult"
             :is-calculating="calculating"
             :streaming-content="baziStreamingContent"
+            :is-mock="baziIsMock"
           />
         </div>
       </div>
@@ -414,6 +415,7 @@
             :data="marriageResult"
             :is-calculating="marrying"
             :streaming-content="marriageStreamingContent"
+            :is-mock="marriageIsMock"
           />
         </div>
       </div>
@@ -552,6 +554,10 @@ const drawing = ref(false)
 const baziStreamingContent = ref('')
 const marriageStreamingContent = ref('')
 
+// 模拟数据标识
+const baziIsMock = ref(false)
+const marriageIsMock = ref(false)
+
 // 八字计算表单
 const calculateForm = reactive({
   name: '',
@@ -661,27 +667,38 @@ const handleCalculate = async () => {
     onStart: (data) => {
       console.log('[Chat] 开始计算:', data)
     },
+    onStreamStart: (data) => {
+      console.log('[Chat] 开始流式生成:', data)
+    },
     onChunk: (content) => {
       console.log('[Chat] 收到 chunk:', content)
       baziStreamingContent.value += content
-      console.log('[Chat] streamingContent 长度:', baziStreamingContent.value.length)
     },
-    onValidationStart: (data) => {
-      console.log('[Chat] 开始验证:', data)
+    onStreamComplete: (data) => {
+      console.log('[Chat] 流式生成完成:', data)
     },
-    onComplete: (result) => {
-      console.log('[Chat] 计算完成:', result)
-      baziResult.value = result
+    onStructureStart: (data) => {
+      console.log('[Chat] 开始结构化:', data)
+    },
+    onComplete: (data) => {
+      console.log('[Chat] 计算完成:', data.result, 'is_mock:', data.is_mock)
+      baziResult.value = data.result
+      baziIsMock.value = data.is_mock || false
       baziInfo.value = {
         name: calculateForm.name,
-        id: result.id || Date.now().toString()
+        id: data.result.id || Date.now().toString()
       }
       calculating.value = false
-      ElMessage.success('计算成功')
+
+      if (data.is_mock) {
+        ElMessage.warning('计算完成（使用模拟数据）')
+      } else {
+        ElMessage.success('计算成功')
+      }
     },
     onError: (error) => {
       console.error('[Chat] 错误:', error)
-      ElMessage.error(error || '计算失败，请重试')
+      ElMessage.error(error.error || error || '计算失败，请重试')
       calculating.value = false
     }
   })
@@ -737,21 +754,36 @@ const handleMarriage = async () => {
 
   streamBaziMarriage(requestData, {
     onStart: (data) => {
-      console.log('开始合婚:', data)
+      console.log('[Chat] 开始合婚:', data)
+    },
+    onStreamStart: (data) => {
+      console.log('[Chat] 开始流式生成:', data)
     },
     onChunk: (content) => {
+      console.log('[Chat] 收到 chunk:', content)
       marriageStreamingContent.value += content
     },
-    onValidationStart: (data) => {
-      console.log('开始验证:', data)
+    onStreamComplete: (data) => {
+      console.log('[Chat] 流式生成完成:', data)
     },
-    onComplete: (result) => {
-      marriageResult.value = result
+    onStructureStart: (data) => {
+      console.log('[Chat] 开始结构化:', data)
+    },
+    onComplete: (data) => {
+      console.log('[Chat] 合婚完成:', data.result, 'is_mock:', data.is_mock)
+      marriageResult.value = data.result
+      marriageIsMock.value = data.is_mock || false
       marrying.value = false
-      ElMessage.success('合婚完成')
+
+      if (data.is_mock) {
+        ElMessage.warning('合婚完成（使用模拟数据）')
+      } else {
+        ElMessage.success('合婚完成')
+      }
     },
     onError: (error) => {
-      ElMessage.error(error || '合婚失败，请重试')
+      console.error('[Chat] 错误:', error)
+      ElMessage.error(error.error || error || '合婚失败，请重试')
       marrying.value = false
     }
   })
